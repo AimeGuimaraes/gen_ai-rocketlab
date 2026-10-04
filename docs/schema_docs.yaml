@@ -1,0 +1,328 @@
+# Dicionário de dados da camada Gold da CineData (cinerocket.db, SQLite, somente leitura).
+# Fonte: notebooks/01_exploracao.ipynb e consultas de verificação da Etapa 2.
+# Este arquivo é a fonte única do esquema e das regras usadas no prompt do agente
+# (ver src/cinedata_agent/schema.py). As seções limitacoes_conhecidas e
+# notas_desempenho são documentação e não entram no prompt.
+
+convencoes:
+  - Banco SQLite em esquema estrela; todas as chaves sk_* são hashes VARCHAR(64), sem órfãos.
+  - "Moeda padrão: US$ (colunas _usd). Colunas _brl já estão em R$ (câmbio histórico do lançamento)."
+  - Datas em texto ISO AAAA-MM-DD; comparar como texto ou com date().
+  - Notas TMDB, IMDb e de usuários na escala 0–10.
+  - Textos de negócio (sinopse, gêneros) estão em inglês; status_filme e reviews em português.
+
+tabelas:
+  dim_movies:
+    descricao: Catálogo de filmes (95.645 filmes, lançamentos de 2016 a 2029). Centro do esquema.
+    chave_primaria: sk_movie_id
+    ligacoes:
+      - sk_movie_id -> fact_movies_performance.sk_movie_id (1:1)
+      - sk_movie_id -> dim_reviews.sk_movie_id (1:0..1)
+      - sk_movie_id -> movie_reviews.sk_movie_id (1:N)
+      - sk_movie_id -> bridge_movie_genre.sk_movie_id (1:N)
+      - sk_movie_id -> bridge_movie_person.sk_movie_id (1:N)
+      - sk_movie_id -> bridge_movie_company.sk_movie_id (1:N)
+    colunas:
+      sk_movie_id: {tipo: VARCHAR(64), descricao: Chave substituta do filme (hash).}
+      id_filme: {tipo: VARCHAR(50), descricao: "Id do filme na origem (TMDB), único; use para diferenciar títulos repetidos."}
+      titulo: {tipo: VARCHAR(500), descricao: "Título original em Title Case; 4.558 títulos se repetem em filmes diferentes."}
+      data_lancamento: {tipo: "DATE (texto ISO)", descricao: Data de lançamento; sem nulos; datas futuras são filmes não lançados.}
+      ano_lancamento: {tipo: INTEGER, descricao: Ano de lançamento (coerente com data_lancamento).}
+      duracao_minutos: {tipo: INTEGER, unidade: minutos, descricao: "Duração; 0 = desconhecida; >300 min são suspeitos (máx. 13.319)."}
+      idioma_original: {tipo: VARCHAR(10), descricao: "100% nulo: dado indisponível."}
+      status_filme: {tipo: VARCHAR(50), descricao: "Lançado, Pós-Produção, Em Produção ou Planejado."}
+      sinopse: {tipo: VARCHAR(4000), descricao: "Sinopse em inglês, preenchida em 100% dos filmes."}
+      url_poster: {tipo: VARCHAR(2048), descricao: URL da imagem do pôster.}
+      url_backdrop: {tipo: VARCHAR(2048), descricao: URL da imagem de fundo.}
+
+  fact_movies_performance:
+    descricao: Métricas financeiras, de popularidade e de notas; exatamente 1 linha por filme.
+    chave_primaria: sk_movie_id
+    ligacoes:
+      - sk_movie_id -> dim_movies.sk_movie_id (1:1)
+    colunas:
+      sk_movie_id: {tipo: VARCHAR(64), descricao: Filme.}
+      orcamento_usd: {tipo: "NUMERIC(18,2)", moeda: US$, descricao: "Orçamento; NULL = não informado (nunca 0); informado em 8,3% dos filmes."}
+      receita_usd: {tipo: "NUMERIC(18,2)", moeda: US$, descricao: "Receita (faturamento, bilheteria); NULL = não informada (nunca 0); informada em 3,5%."}
+      lucro_usd: {tipo: "NUMERIC(18,2)", moeda: US$, descricao: "Sempre COALESCE(receita,0) − COALESCE(orcamento,0), nunca nulo: só é válido com receita e orçamento informados."}
+      orcamento_brl: {tipo: "NUMERIC(18,2)", moeda: R$, descricao: Orçamento em reais (câmbio histórico do lançamento).}
+      receita_brl: {tipo: "NUMERIC(18,2)", moeda: R$, descricao: Receita em reais (câmbio histórico do lançamento).}
+      lucro_brl: {tipo: "NUMERIC(18,2)", moeda: R$, descricao: Lucro em reais; mesma regra de lucro_usd.}
+      popularidade: {tipo: DOUBLE, unidade: índice TMDB, descricao: "Popularidade TMDB, sem teto (mediana 0,92; máx. 2.994); há ruído em filmes com poucos votos."}
+      nota_tmdb: {tipo: DOUBLE, unidade: "0–10", descricao: "Nota média TMDB; 0 com qtd_tmdb = 0 significa sem nota."}
+      qtd_tmdb: {tipo: INTEGER, unidade: votos, descricao: Número de votos no TMDB (métrica padrão de "mais votados").}
+      nota_imdb: {tipo: DOUBLE, unidade: "0–10", descricao: "Nota média IMDb; NULL = sem nota."}
+      qtd_imdb: {tipo: INTEGER, unidade: votos, descricao: "Número de votos no IMDb; ligado por título (suspeito em títulos repetidos)."}
+
+  dim_genres:
+    descricao: Gêneros (19), com nomes em inglês.
+    chave_primaria: sk_genre_id
+    ligacoes:
+      - sk_genre_id -> bridge_movie_genre.sk_genre_id
+    colunas:
+      sk_genre_id: {tipo: VARCHAR(64), descricao: Chave do gênero.}
+      nome_genero: {tipo: VARCHAR(50), descricao: "Action, Adventure, Animation, Comedy, Crime, Documentary, Drama, Family, Fantasy, History, Horror, Music, Mystery, Romance, Science Fiction, Thriller, Tv Movie, War, Western."}
+
+  bridge_movie_genre:
+    descricao: "Relação N:N filme–gênero; um filme pode ter vários gêneros e 20.037 filmes não têm nenhum."
+    chave_primaria: (sk_movie_id, sk_genre_id)
+    ligacoes:
+      - sk_movie_id -> dim_movies.sk_movie_id
+      - sk_genre_id -> dim_genres.sk_genre_id
+    colunas:
+      sk_movie_id: {tipo: VARCHAR(64), descricao: Filme.}
+      sk_genre_id: {tipo: VARCHAR(64), descricao: Gênero.}
+
+  dim_people:
+    descricao: "Pessoas do elenco e da equipe; a mesma pessoa tem um registro (sk_person_id) por papel."
+    chave_primaria: sk_person_id
+    ligacoes:
+      - sk_person_id -> bridge_movie_person.sk_person_id
+    colunas:
+      sk_person_id: {tipo: VARCHAR(64), descricao: "Chave da pessoa em um papel."}
+      nome_pessoa: {tipo: VARCHAR(255), descricao: "Nome; há alguns nomes inválidos (ex.: 0.6)."}
+      tipo_pessoa: {tipo: VARCHAR(20), descricao: "Papel: Ator, Diretor ou Roteirista."}
+
+  bridge_movie_person:
+    descricao: "Relação N:N filme–pessoa; só tem chaves, o papel vem de dim_people.tipo_pessoa."
+    chave_primaria: (sk_movie_id, sk_person_id)
+    ligacoes:
+      - sk_movie_id -> dim_movies.sk_movie_id
+      - sk_person_id -> dim_people.sk_person_id
+    colunas:
+      sk_movie_id: {tipo: VARCHAR(64), descricao: Filme.}
+      sk_person_id: {tipo: VARCHAR(64), descricao: Pessoa (em um papel).}
+
+  dim_companies:
+    descricao: Produtoras.
+    chave_primaria: sk_company_id
+    ligacoes:
+      - sk_company_id -> bridge_movie_company.sk_company_id
+    colunas:
+      sk_company_id: {tipo: VARCHAR(64), descricao: Chave da produtora.}
+      nome_produtora: {tipo: VARCHAR(255), descricao: Nome da produtora.}
+
+  bridge_movie_company:
+    descricao: Relação N:N filme–produtora.
+    chave_primaria: (sk_movie_id, sk_company_id)
+    ligacoes:
+      - sk_movie_id -> dim_movies.sk_movie_id
+      - sk_company_id -> dim_companies.sk_company_id
+    colunas:
+      sk_movie_id: {tipo: VARCHAR(64), descricao: Filme.}
+      sk_company_id: {tipo: VARCHAR(64), descricao: Produtora.}
+
+  dim_reviews:
+    descricao: "Agregado das avaliações de usuários por filme (1 linha por filme avaliado, 40.267 filmes); bate 100% com movie_reviews."
+    chave_primaria: sk_review_id
+    ligacoes:
+      - sk_movie_id -> dim_movies.sk_movie_id (1:1)
+    colunas:
+      sk_review_id: {tipo: VARCHAR(64), descricao: Chave do agregado (igual a sk_movie_id).}
+      sk_movie_id: {tipo: VARCHAR(64), descricao: Filme.}
+      qtd_avaliacoes_usuarios: {tipo: INTEGER, unidade: avaliações, descricao: "Número de avaliações de usuários (1 a 13; 93% dos filmes têm só 1)."}
+      nota_media_usuarios: {tipo: DOUBLE, unidade: "0–10", descricao: Nota média dos usuários.}
+
+  movie_reviews:
+    descricao: "Avaliações individuais de usuários, com texto em português. Use só para texto, autor ou data; para contagens e médias, use dim_reviews."
+    chave_primaria: id
+    ligacoes:
+      - sk_movie_id -> dim_movies.sk_movie_id (N:1)
+    colunas:
+      id: {tipo: INTEGER, descricao: Id da avaliação.}
+      sk_movie_review_id: {tipo: VARCHAR(64), descricao: Chave única da avaliação.}
+      sk_movie_id: {tipo: VARCHAR(64), descricao: Filme.}
+      name: {tipo: VARCHAR(120), descricao: Nome do autor.}
+      rating: {tipo: DOUBLE, unidade: "0–10", descricao: Nota dada pelo usuário.}
+      text: {tipo: VARCHAR(4000), descricao: Texto da avaliação (português).}
+      created_at: {tipo: DATETIME, descricao: Data e hora da avaliação.}
+
+regras_de_negocio:
+  # --- Regras gerais ---
+  - id: G1
+    titulo: Receita e orçamento informados
+    regra: >-
+      Informado = coluna IS NOT NULL (nunca vem 0). Em somas, médias e rankings de receita ou
+      orçamento, filtrar os nulos e dizer quantos filmes têm o dado.
+  - id: G2
+    titulo: Lucro só com receita e orçamento
+    regra: >-
+      Lucro e margem só com receita_usd IS NOT NULL AND orcamento_usd IS NOT NULL (1.630 filmes).
+      Explicar o filtro na resposta: sem orçamento o lucro fica igual à receita (inflado) e sem
+      receita fica igual a −orçamento.
+  - id: G3
+    titulo: Margem de lucro
+    regra: >-
+      Margem = (receita − orçamento) / receita × 100. Em toda regra de margem (por filme e por
+      gênero), exigir orcamento_usd >= 100000 AND receita_usd >= 100000, porque valores minúsculos
+      são erros de carga. Em agregados (gênero), usar margem agregada = SUM(lucro) / SUM(receita) × 100
+      e explicar por que não usou a média simples.
+  - id: G4
+    titulo: Moeda
+    regra: >-
+      Padrão US$ (colunas _usd). Se pedirem reais/R$, usar as colunas _brl como estão (câmbio
+      histórico já aplicado), sem converter. Sempre indicar a moeda.
+  - id: G5
+    titulo: Notas
+    regra: >-
+      TMDB, IMDb e usuários na escala 0–10. nota_tmdb = 0 sem votos é "sem nota"; nota_imdb NULL é
+      "sem nota". Sempre dizer qual fonte de nota foi usada (padrão: TMDB).
+  - id: G6
+    titulo: Mínimo de votos
+    regra: >-
+      Rankings de nota, divergência de notas e popularidade: qtd_tmdb >= 100. Informar o filtro na
+      resposta.
+  - id: G7
+    titulo: Datas e filmes lançados
+    regra: >-
+      "Últimos N anos" = data_lancamento BETWEEN date('now','-N years') AND date('now'). Rankings de
+      receita, nota e popularidade só com filmes já lançados (data_lancamento <= date('now'));
+      futuros e "Planejado" ficam fora, salvo se a pergunta pedir. Ano = ano_lancamento. A base vai
+      de 2016 a 2029 e os votos vão até cerca de 2023.
+  - id: G8
+    titulo: Títulos
+    regra: >-
+      Mostrar sempre "Título (ano)", sem deduplicar (títulos iguais são filmes diferentes). Se
+      título e ano coincidirem, mostrar também id_filme. Buscar título com LOWER(titulo) LIKE.
+  - id: G9
+    titulo: Pessoas e papéis
+    regra: >-
+      O papel está em dim_people.tipo_pessoa ('Ator', 'Diretor', 'Roteirista'), sempre filtrado no
+      join com bridge_movie_person. A mesma pessoa tem um sk_person_id por papel: agrupar por
+      sk_person_id.
+  - id: G10
+    titulo: Gêneros em inglês
+    regra: >-
+      Traduzir para o nome exato da base: Ação=Action, Aventura=Adventure, Animação=Animation,
+      Comédia=Comedy, Crime=Crime, Documentário=Documentary, Drama=Drama, Família=Family,
+      Fantasia=Fantasy, História=History, Terror=Horror, Música=Music, Mistério=Mystery,
+      Romance=Romance, Ficção científica=Science Fiction, Suspense=Thriller, Filme de TV=Tv Movie,
+      Guerra=War, Faroeste=Western. Um filme pode ter vários gêneros.
+  - id: G11
+    titulo: Mais avaliados
+    regra: >-
+      "Mais avaliados/votados" sem qualificação = qtd_tmdb. "Pelos usuários" = dim_reviews.
+      movie_reviews só para texto, autor e data. qtd_imdb é suspeito (ligado por título).
+  - id: G12
+    titulo: Sinônimos e campos limitados
+    regra: >-
+      Receita = faturamento = bilheteria. idioma_original está indisponível (100% nulo).
+      duracao_minutos = 0 é desconhecida. Sinopse em inglês: buscar temas com palavras em inglês.
+
+  # --- Regras por pergunta do enunciado (docs/perguntas_enunciado.md) ---
+  - id: P1
+    titulo: Top 10 filmes com maior receita em R$
+    regra: >-
+      receita_brl IS NOT NULL, filme já lançado, ORDER BY receita_brl DESC LIMIT 10.
+  - id: P2
+    titulo: Lucro médio por gênero (só filmes com receita informada)
+    regra: >-
+      AVG(lucro_usd) por nome_genero com G2 (receita E orçamento informados) e COUNT de filmes.
+      Explicar o filtro de orçamento.
+  - id: P3
+    titulo: Filmes com maior margem de lucro
+    regra: >-
+      Margem por filme com G2 e G3 (orçamento e receita >= US$ 100 mil), ORDER BY margem DESC.
+      Mostrar orçamento, receita e margem.
+  - id: P4
+    titulo: Os 5 filmes mais populares
+    regra: >-
+      ORDER BY popularidade DESC LIMIT 5, com popularidade IS NOT NULL, qtd_tmdb >= 100 e filme já
+      lançado.
+  - id: P5
+    titulo: Maior divergência entre nota TMDB e IMDb
+    regra: >-
+      ORDER BY ABS(nota_tmdb − nota_imdb) DESC, com qtd_tmdb >= 100 e nota_imdb IS NOT NULL.
+      Mostrar as duas notas.
+  - id: P6
+    titulo: Nota média IMDb por ano de lançamento
+    regra: >-
+      AVG(nota_imdb) com nota_imdb IS NOT NULL, GROUP BY ano_lancamento, só filmes já lançados.
+      Mostrar a quantidade de filmes de cada ano.
+  - id: P7
+    titulo: Ator com mais filmes nos últimos 5 anos
+    regra: >-
+      tipo_pessoa = 'Ator' e o filtro de "últimos N anos" (G7); COUNT(DISTINCT sk_movie_id) GROUP BY
+      sk_person_id, ORDER BY filmes DESC.
+  - id: P8
+    titulo: Diretores com maior nota média (mínimo de 5 filmes)
+    regra: >-
+      tipo_pessoa = 'Diretor', AVG(nota_tmdb) só de filmes com qtd_tmdb >= 100 e já lançados,
+      GROUP BY sk_person_id HAVING COUNT(*) >= 5.
+  - id: P9
+    titulo: Dupla ator-diretor que mais trabalhou junta
+    regra: >-
+      CTE diretores (bridge_movie_person + dim_people com tipo_pessoa = 'Diretor'), join com
+      bridge_movie_person pelo sk_movie_id e com dim_people como 'Ator'. GROUP BY os dois
+      sk_person_id, ORDER BY filmes DESC, ator, diretor (há empates). Mostrar os nomes.
+  - id: P10
+    titulo: Quantidade de filmes por gênero
+    regra: >-
+      COUNT por nome_genero via bridge_movie_genre. Avisar que um filme conta em vários gêneros e
+      que 20.037 filmes não têm gênero.
+  - id: P11
+    titulo: Produtora com maior lucro total
+    regra: >-
+      SUM(lucro_usd) GROUP BY sk_company_id com G2. Mostrar a quantidade de filmes.
+  - id: P12
+    titulo: Gênero com maior margem de lucro média
+    regra: >-
+      Margem agregada SUM(lucro_usd) / SUM(receita_usd) × 100 por gênero, com G2 e o mesmo piso da
+      P3 (orçamento e receita >= US$ 100 mil). Mostrar a quantidade de filmes. A resposta deve dizer
+      que usou a margem agregada (lucro total ÷ receita total) e não a média simples das margens,
+      porque "margem média" pode ser lida das duas formas e a média simples é distorcida por poucos
+      filmes com margens extremas.
+  - id: P13
+    titulo: Filmes mais avaliados pelos usuários
+    regra: >-
+      ORDER BY dim_reviews.qtd_avaliacoes_usuarios DESC, nota_media_usuarios DESC. Avisar que as
+      avaliações de usuários parecem dados de exemplo.
+  - id: P14
+    titulo: Nota dos usuários × nota IMDb
+    regra: >-
+      ORDER BY ABS(nota_media_usuarios − nota_imdb) DESC, com qtd_avaliacoes_usuarios >= 3 e
+      qtd_imdb >= 100.
+
+limitacoes_conhecidas:
+  - Sinopse e nomes de gêneros estão em inglês.
+  - idioma_original está 100% vazio; perguntas sobre idioma não podem ser respondidas.
+  - "As avaliações de usuários (dim_reviews/movie_reviews) parecem dados de exemplo: todas criadas em 2026-09-28 15:49:34, no máximo 13 por filme e concentradas em cópias de Die Hart."
+  - "Notas e votos IMDb parecem ligados pelo título: cópias de um mesmo título têm o mesmo qtd_imdb (ex.: 24 cópias de Die Hart: Die Harter com 6.181 votos)."
+  - "As colunas _brl usam o câmbio histórico do lançamento (BRL/USD de 3,05 a 5,84), então não refletem o câmbio atual."
+  - "Valores financeiros minúsculos (ex.: orçamento de US$ 1) são erros de carga; por isso o piso de US$ 100 mil na margem."
+  - "popularidade tem ruído (valores iguais ao ano, como 2020 ou 1969, em filmes com poucos votos)."
+  - "4.558 títulos se repetem em filmes diferentes; nomes de pessoas inválidos (ex.: 0.6)."
+  - "Votos TMDB só vão até cerca de 2023-09: nenhum filme lançado depois disso tem 10 votos ou mais."
+
+notas_desempenho:
+  contexto: >-
+    Limite planejado de 5 s por consulta. Consultas que juntam pessoas e filmes são lentas no disco:
+    o join tem só ~517 mil linhas, mas cada linha faz buscas aleatórias por chaves hash de 64
+    caracteres (cache padrão de 2 MB) e o GROUP BY agrupa por essas strings. O banco já tem índice
+    em bridge_movie_person(sk_person_id). Medições de 2026-10-04, medianas de 3 execuções, conexão
+    somente leitura.
+  medicoes_segundos:
+    - {consulta: P9, cenario: disco, CTEs filtrando o papel antes do self-join, tempo: 104}
+    - {consulta: P9, cenario: disco com ordem de join forçada (CROSS JOIN), tempo: 114}
+    - {consulta: P9, cenario: disco + temp_store=MEMORY, tempo: 108}
+    - {consulta: P9, cenario: disco + cache_size 1 GB, tempo: 12.1}
+    - {consulta: P9, cenario: disco + cache 1 GB + mmap 1 GB, tempo: 10.8}
+    - {consulta: P9, cenario: ":memory: + índices nas bridges e em dim_people(tipo_pessoa)", tempo: 9.0-11.6}
+    - {consulta: P9, cenario: ":memory: + aux_vinculo_papel com chaves hash", tempo: 4.9}
+    - {consulta: P9, cenario: ":memory: + aux_vinculo_papel com chaves inteiras", tempo: 2.5}
+    - {consulta: P7, cenario: disco, tempo: 15.6}
+    - {consulta: P7, cenario: ":memory:, tabelas originais", tempo: 7.2}
+    - {consulta: P7, cenario: ":memory: + aux_vinculo_papel", tempo: 1.0}
+    - {consulta: P8, cenario: disco, tempo: 10.5}
+    - {consulta: P8, cenario: ":memory:, tabelas originais", tempo: 4.2}
+    - {consulta: P8, cenario: ":memory: + aux_vinculo_papel", tempo: 0.35}
+  custo_memoria: >-
+    Cópia para :memory: via backup: 1,3–5,4 s e +635 MB. Criação de aux_vinculo_papel com índice:
+    8,6 s. Total de ~10 s de inicialização e ~700 MB de RAM.
+  recomendacao_etapa_4: >-
+    Ao iniciar: abrir o banco com mode=ro, copiar para :memory: com backup(), aplicar
+    PRAGMA temp_store=MEMORY, criar aux_vinculo_papel(id_mov, id_pes, tipo_pessoa) com os rowid de
+    dim_movies e dim_people mais o índice (tipo_pessoa, id_mov, id_pes), e só então ativar
+    PRAGMA query_only=ON (testado: escrita recusada). Orientar no prompt o uso de aux_vinculo_papel
+    em perguntas sobre pessoas (P7, P8, P9). Plano B, se faltar memória: disco com cache grande e um
+    limite maior só para consultas com pessoas.
