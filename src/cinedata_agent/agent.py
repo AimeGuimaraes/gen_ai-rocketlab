@@ -25,9 +25,10 @@ from pydantic_ai.models.openrouter import OpenRouterModel
 from pydantic_ai.providers.openrouter import OpenRouterProvider
 from pydantic_ai.usage import UsageLimits
 
-from cinedata_agent import tools
+from cinedata_agent import cache, tools
 from cinedata_agent.config import Config, carregar_config
 from cinedata_agent.db import ErroConsulta, ResultadoConsulta, inicializar_banco
+from cinedata_agent.guardrails import verificar_pergunta
 from cinedata_agent.prompts import montar_prompt_sistema
 
 logger = logging.getLogger(__name__)
@@ -75,6 +76,8 @@ class RespostaAgente(BaseModel):
     requisicoes: int
     tempo_ms: int
     historico: list[ModelMessage]
+    cache: bool = False  # veio do cache (0 requisições)
+    recusada: bool = False  # recusada pelos guardrails antes de chamar o modelo
 
 
 # --- Modelos e tratamento de erros ---
@@ -180,20 +183,63 @@ def _erro_cota(erro: Exception) -> bool:
     return classificar_erro(erro) == "cota"
 
 
+def _recusar(mensagem: str, historico: list[ModelMessage] | None) -> RespostaAgente:
+    """Resposta de recusa dos guardrails: sem SQL e sem gastar cota; o histórico segue igual."""
+    return RespostaAgente(
+        resposta=mensagem,
+        sql_executados=[],
+        colunas=[],
+        linhas=[],
+        modelo=None,
+        requisicoes=0,
+        tempo_ms=0,
+        historico=list(historico or []),
+        recusada=True,
+    )
+
+
+def _buscar_no_cache(chave: str, inicio: float) -> RespostaAgente | None:
+    """Devolve a resposta guardada no cache (marcada com cache=True e 0 requisições), se houver."""
+    guardada = cache.buscar(chave)
+    if guardada is None:
+        return None
+    try:
+        resposta = RespostaAgente.model_validate_json(guardada)
+    except ValueError as erro:
+        logger.warning("Resposta do cache ilegível (%s); chamando o modelo.", erro)
+        return None
+    tempo_ms = round((time.perf_counter() - inicio) * 1000)
+    logger.info("Resposta vinda do cache em %d ms (0 requisições).", tempo_ms)
+    return resposta.model_copy(update={"cache": True, "requisicoes": 0, "tempo_ms": tempo_ms})
+
+
 async def ask_async(
-    pergunta: str, historico: list[ModelMessage] | None = None, modelo: Model | None = None
+    pergunta: str,
+    historico: list[ModelMessage] | None = None,
+    modelo: Model | None = None,
+    usar_cache: bool = True,
 ) -> RespostaAgente:
     """Responde uma pergunta (versão assíncrona, para a API). Ver ask()."""
+    recusa = verificar_pergunta(pergunta)
+    if recusa is not None:
+        return _recusar(recusa.mensagem, historico)
+
+    inicio = time.perf_counter()
+    modelo = modelo or _modelo_padrao()
+    chave = cache.chave_cache(pergunta, modelo.model_name, montar_prompt_sistema())
+    com_cache = usar_cache and not historico  # acompanhamento depende do histórico: sem cache
+    if com_cache and (guardada := _buscar_no_cache(chave, inicio)) is not None:
+        return guardada
+
     inicializar_banco()
     deps = DepsAgente()
     falhas: list[str] = []
     token = _falhas_modelo.set(falhas)
-    inicio = time.perf_counter()
     logger.info("Pergunta: %s", pergunta)
     try:
         resultado = await criar_agente().run(
             pergunta,
-            model=modelo or _modelo_padrao(),
+            model=modelo,
             deps=deps,
             message_history=historico,
             usage_limits=UsageLimits(request_limit=MAX_REQUISICOES),
@@ -234,18 +280,25 @@ async def ask_async(
         "Resposta pelo modelo %s: %d requisições (%d falhas de modelo), %d SQL, %d ms.",
         resposta.modelo, resposta.requisicoes, len(falhas), len(resposta.sql_executados), tempo_ms,
     )
+    if com_cache:  # só respostas bem-sucedidas chegam aqui; erros saíram por exceção
+        cache.salvar(chave, pergunta, modelo.model_name, resposta.model_dump_json())
     return resposta
 
 
 def ask(
-    pergunta: str, historico: list[ModelMessage] | None = None, modelo: Model | None = None
+    pergunta: str,
+    historico: list[ModelMessage] | None = None,
+    modelo: Model | None = None,
+    usar_cache: bool = True,
 ) -> RespostaAgente:
     """Responde uma pergunta em português consultando o banco.
 
-    Passe o `historico` da resposta anterior para manter a memória da conversa. Levanta
-    QuotaExceededError se a cota diária acabou e ErroAgente se não conseguir responder.
+    Antes do modelo, aplica os guardrails (recusa sem gastar cota) e consulta o cache (desligado
+    com usar_cache=False ou quando há histórico). Passe o `historico` da resposta anterior para
+    manter a memória da conversa. Levanta QuotaExceededError se a cota diária acabou e
+    ErroAgente se não conseguir responder.
     """
-    return _event_loop().run_until_complete(ask_async(pergunta, historico, modelo))
+    return _event_loop().run_until_complete(ask_async(pergunta, historico, modelo, usar_cache))
 
 
 @lru_cache(maxsize=1)

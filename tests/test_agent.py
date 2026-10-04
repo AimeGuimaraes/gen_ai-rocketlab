@@ -224,7 +224,9 @@ def test_todos_os_modelos_indisponiveis(sem_banco: None) -> None:
 
 # --- CLI ---
 
-def resposta_falsa(pergunta: str, historico: list[ModelMessage] | None = None) -> RespostaAgente:
+def resposta_falsa(
+    pergunta: str, historico: list[ModelMessage] | None = None, usar_cache: bool = True
+) -> RespostaAgente:
     """Substitui o ask() na CLI, guardando o histórico recebido."""
     return RespostaAgente(
         resposta=f"Resposta para: {pergunta}",
@@ -250,7 +252,9 @@ def test_cli_uma_pergunta(monkeypatch: pytest.MonkeyPatch, capsys: pytest.Captur
 def test_cli_interativo_com_memoria(monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
     historicos: list[int] = []
 
-    def ask_registrando(pergunta: str, historico: list[ModelMessage] | None = None) -> RespostaAgente:
+    def ask_registrando(
+        pergunta: str, historico: list[ModelMessage] | None = None, usar_cache: bool = True
+    ) -> RespostaAgente:
         historicos.append(len(historico or []))
         return resposta_falsa(pergunta, historico)
 
@@ -264,9 +268,38 @@ def test_cli_interativo_com_memoria(monkeypatch: pytest.MonkeyPatch, capsys: pyt
 
 
 def test_cli_cota_esgotada(monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
-    def sem_cota(pergunta: str, historico: list[ModelMessage] | None = None) -> RespostaAgente:
+    def sem_cota(
+        pergunta: str, historico: list[ModelMessage] | None = None, usar_cache: bool = True
+    ) -> RespostaAgente:
         raise QuotaExceededError()
 
     monkeypatch.setattr(cli, "ask", sem_cota)
     assert cli.main(["qualquer"]) == 2
     assert "21h" in capsys.readouterr().out
+
+
+@pytest.mark.parametrize(("argv", "esperado"), [(["pergunta"], True), (["--no-cache", "pergunta"], False)])
+def test_cli_opcao_no_cache(monkeypatch: pytest.MonkeyPatch, argv: list[str], esperado: bool) -> None:
+    recebidos: list[bool] = []
+
+    def ask_registrando(
+        pergunta: str, historico: list[ModelMessage] | None = None, usar_cache: bool = True
+    ) -> RespostaAgente:
+        recebidos.append(usar_cache)
+        return resposta_falsa(pergunta, historico)
+
+    monkeypatch.setattr(cli, "ask", ask_registrando)
+    assert cli.main(argv) == 0
+    assert recebidos == [esperado]
+
+
+def test_cli_rodape_de_cache_e_de_recusa() -> None:
+    do_cache = resposta_falsa("x").model_copy(update={"cache": True, "requisicoes": 0})
+    assert "Requisições: 0 (resposta do cache)" in cli.formatar_resposta(do_cache)
+    recusada = RespostaAgente(
+        resposta="Não posso alterar dados.", sql_executados=[], colunas=[], linhas=[],
+        modelo=None, requisicoes=0, tempo_ms=0, historico=[], recusada=True,
+    )
+    texto_recusa = cli.formatar_resposta(recusada)
+    assert "recusada antes de chamar o modelo" in texto_recusa
+    assert "SQL executado" not in texto_recusa

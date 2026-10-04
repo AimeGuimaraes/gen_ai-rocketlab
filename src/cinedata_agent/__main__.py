@@ -19,6 +19,9 @@ COMANDOS_SAIR = {"sair", "exit", "quit"}
 def formatar_resposta(resposta: RespostaAgente) -> str:
     """Monta o texto mostrado no terminal: resposta, SQL, tabela e rodapé."""
     partes = [resposta.resposta.strip()]
+    if resposta.recusada:
+        partes.append("Pergunta recusada antes de chamar o modelo (0 requisições).")
+        return "\n\n".join(partes)
     if resposta.sql_executados:
         sqls = "\n\n".join(resposta.sql_executados)
         partes.append(f"--- SQL executado ---\n{sqls}")
@@ -29,16 +32,17 @@ def formatar_resposta(resposta: RespostaAgente) -> str:
             texto += f"\n(mostrando {MAX_LINHAS_TABELA} de {len(resposta.linhas)} linhas)"
         partes.append(f"--- Resultado da última consulta ---\n{texto}")
     tempo = f"{resposta.tempo_ms / 1000:.1f}".replace(".", ",")
-    partes.append(
-        f"Modelo: {resposta.modelo or '?'} | Requisições: {resposta.requisicoes} | Tempo: {tempo} s"
-    )
+    requisicoes = f"{resposta.requisicoes} (resposta do cache)" if resposta.cache else resposta.requisicoes
+    partes.append(f"Modelo: {resposta.modelo or '?'} | Requisições: {requisicoes} | Tempo: {tempo} s")
     return "\n\n".join(partes)
 
 
-def responder(pergunta: str, historico: list[ModelMessage] | None = None) -> RespostaAgente | None:
+def responder(
+    pergunta: str, historico: list[ModelMessage] | None = None, usar_cache: bool = True
+) -> RespostaAgente | None:
     """Faz a pergunta e imprime o resultado; devolve None em caso de erro do agente."""
     try:
-        resposta = ask(pergunta, historico)
+        resposta = ask(pergunta, historico, usar_cache=usar_cache)
     except ErroAgente as erro:
         print(f"Não consegui responder: {erro}")
         return None
@@ -46,7 +50,7 @@ def responder(pergunta: str, historico: list[ModelMessage] | None = None) -> Res
     return resposta
 
 
-def modo_interativo() -> None:
+def modo_interativo(usar_cache: bool = True) -> None:
     """Responde várias perguntas seguidas, com memória da conversa, até o usuário digitar "sair"."""
     print("Carregando o banco...")
     inicializar_banco()
@@ -62,7 +66,7 @@ def modo_interativo() -> None:
             continue
         if pergunta.lower() in COMANDOS_SAIR:
             break
-        resposta = responder(pergunta, historico)
+        resposta = responder(pergunta, historico, usar_cache)
         if resposta is not None:
             historico = resposta.historico
     print("Até mais!")
@@ -76,15 +80,19 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("pergunta", nargs="*", help="pergunta (sem ela, abre o modo interativo)")
     parser.add_argument("-v", "--verbose", action="store_true", help="mostra os passos do agente (logging)")
+    parser.add_argument(
+        "--no-cache", action="store_true", help="ignora o cache e sempre chama o modelo (gasta cota)"
+    )
     args = parser.parse_args(argv)
     logging.basicConfig(
         level=logging.INFO if args.verbose else logging.WARNING,
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
     )
+    usar_cache = not args.no_cache
     try:
         if args.pergunta:
-            return 0 if responder(" ".join(args.pergunta)) is not None else 1
-        modo_interativo()
+            return 0 if responder(" ".join(args.pergunta), usar_cache=usar_cache) is not None else 1
+        modo_interativo(usar_cache)
     except QuotaExceededError as erro:
         print(erro)
         return 2
