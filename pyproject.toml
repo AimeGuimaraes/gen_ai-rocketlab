@@ -1,3 +1,25 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cinedata-agent"
+version = "0.1.0"
+description = "Agente Text-to-SQL que responde em português perguntas sobre o catálogo de filmes da CineData."
+readme = "README.md"
+requires-python = ">=3.11"
+# Versões exatas em requirements.txt; aqui só as dependências diretas do pacote.
+dependencies = [
+    "pydantic-ai-slim[openai]",
+    "python-dotenv",
+    "PyYAML",
+    "sqlglot",
+    "pandas",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 testpaths = ["tests"]

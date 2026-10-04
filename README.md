@@ -12,6 +12,26 @@ Fluxo planejado: pergunta -> guardrails -> agente -> ferramentas (esquema, amost
 
 ---
 
+## Instalação
+
+Requer Python 3.11+. No Windows (PowerShell), na raiz do projeto:
+
+```powershell
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+pip install -r requirements.txt   # dependências com as versões testadas
+pip install -e .                  # instala o próprio pacote cinedata_agent (modo editável)
+copy .env.example .env            # depois preencha LLM_API_KEY com sua chave do OpenRouter
+```
+
+Teste a instalação (não chama o modelo):
+
+```powershell
+python -m cinedata_agent --help
+```
+
+---
+
 ## Roadmap
 
 - Definir a stack tecnológica
