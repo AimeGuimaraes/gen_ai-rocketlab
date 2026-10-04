@@ -319,7 +319,10 @@ limitacoes_conhecidas:
 
 notas_desempenho:
   contexto: >-
-    Limite planejado de 5 s por consulta. Consultas que juntam pessoas e filmes são lentas no disco:
+    Limite de 15 s por consulta (DB_TIMEOUT_S no .env; era 5 s até 2026-10-04, mas a P9 chegou a
+    4,8 s em máquina ocupada e estourava o limite; nos testes de P7–P9 o limite é 10 s). O banco é
+    carregado em memória uma única vez por processo (conferido na rodada completa do pytest:
+    1 carga, ~1,2 s). Consultas que juntam pessoas e filmes são lentas no disco:
     o join tem só ~517 mil linhas, mas cada linha faz buscas aleatórias por chaves hash de 64
     caracteres (cache padrão de 2 MB) e o GROUP BY agrupa por essas strings. O banco já tem índice
     em bridge_movie_person(sk_person_id). Medições de 2026-10-04, medianas de 3 execuções, conexão

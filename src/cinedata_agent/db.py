@@ -4,6 +4,7 @@ import logging
 import sqlite3
 import threading
 import time
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -19,7 +20,6 @@ logger = logging.getLogger(__name__)
 
 LIMITE_PADRAO = 100  # LIMIT inserido quando a consulta não tem LIMIT
 MAX_LINHAS = 1000  # teto de linhas devolvidas, mesmo com LIMIT do usuário
-TEMPO_LIMITE_S = 5.0  # tempo máximo por consulta
 INSTRUCOES_POR_CHECAGEM = 10_000  # frequência do progress handler (instruções da VM do SQLite)
 
 # Comandos que nunca podem aparecer na árvore do SQL (REPLACE e VACUUM viram exp.Command).
@@ -201,8 +201,9 @@ def _traduzir_erro(erro: sqlite3.Error, tempo_limite_s: float) -> ErroConsulta:
     mensagem = str(erro)
     if "interrupted" in mensagem:
         return ErroTempoEsgotado(
-            f"A consulta passou de {tempo_limite_s:g} s e foi cancelada. Simplifique: filtre antes "
-            "de juntar tabelas e, em perguntas sobre pessoas, use aux_vinculo_papel."
+            f"A consulta passou do limite de {tempo_limite_s:g} s (DB_TIMEOUT_S) e foi cancelada. "
+            "Simplifique: filtre antes de juntar tabelas e, em perguntas sobre pessoas, use "
+            "aux_vinculo_papel."
         )
     dicas = {
         "no such table": "Tabela inexistente. Use só as tabelas do esquema",
@@ -228,8 +229,19 @@ def _nomes_unicos(colunas: list[str]) -> list[str]:
     return unicos
 
 
-def run_query(sql: str, tempo_limite_s: float = TEMPO_LIMITE_S) -> ResultadoConsulta:
-    """Valida e executa um SELECT no banco em memória, com LIMIT automático e tempo máximo."""
+@lru_cache(maxsize=1)
+def tempo_limite_padrao() -> float:
+    """Tempo máximo por consulta, em segundos (DB_TIMEOUT_S do .env, lido uma vez por processo)."""
+    return carregar_config().db_timeout_s
+
+
+def run_query(sql: str, tempo_limite_s: float | None = None) -> ResultadoConsulta:
+    """Valida e executa um SELECT no banco em memória, com LIMIT automático e tempo máximo.
+
+    Sem `tempo_limite_s`, usa o DB_TIMEOUT_S do .env (padrão de 15 s).
+    """
+    if tempo_limite_s is None:
+        tempo_limite_s = tempo_limite_padrao()
     arvore = validate_sql(sql)
     sql_executado, limite_inserido = aplicar_limite(sql, arvore)
     # Com LIMIT inserido, busca uma linha a mais só para saber se o resultado foi cortado.

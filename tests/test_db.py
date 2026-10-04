@@ -234,7 +234,7 @@ def test_erro_do_sqlite_vira_mensagem_clara(banco: sqlite3.Connection, sql: str,
 @precisa_db
 def test_tempo_esgotado(banco: sqlite3.Connection) -> None:
     infinita = "WITH RECURSIVE c(x) AS (SELECT 1 UNION ALL SELECT x + 1 FROM c) SELECT COUNT(*) FROM c"
-    with pytest.raises(ErroTempoEsgotado, match="cancelada"):
+    with pytest.raises(ErroTempoEsgotado, match=r"limite de 0\.5 s \(DB_TIMEOUT_S\)"):
         run_query(infinita, tempo_limite_s=0.5)
     assert run_query("SELECT 1 AS um").linhas == [{"um": 1}]  # a conexão continua usável
 
@@ -281,8 +281,9 @@ def test_aux_vinculo_papel_bate_com_yaml_e_bridge(banco: sqlite3.Connection) -> 
 def test_p7_p8_p9_rapidas_e_corretas(
     banco: sqlite3.Connection, id_pergunta: str, sql: str, comparar_tudo: bool
 ) -> None:
-    resultado = run_query(sql)
-    assert resultado.tempo_s < 5
+    # 10 s: folga para máquinas mais lentas (no mesmo processo, medem de 0,1 s a ~5 s).
+    resultado = run_query(sql, tempo_limite_s=10)
+    assert resultado.tempo_s < 10
     obtido = [list(linha.values()) for linha in resultado.linhas]
     esperado = _esperado(id_pergunta)
     # P7 depende de date('now'): compara só o 1º colocado, que é estável entre dias próximos.

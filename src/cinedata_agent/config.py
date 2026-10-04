@@ -15,6 +15,7 @@ PADRAO_BASE_URL = "https://openrouter.ai/api/v1"
 PADRAO_MODELO = "nvidia/nemotron-3.5-lightning:free"
 PADRAO_FALLBACK = "google/gemma-4-26b-a4b-it:free,openrouter/free"
 PADRAO_DB_PATH = "cinerocket.db"
+PADRAO_DB_TIMEOUT_S = 15.0
 
 
 @dataclass(frozen=True)
@@ -26,12 +27,14 @@ class Config:
     modelo: str
     modelos_fallback: tuple[str, ...]
     db_path: Path
+    db_timeout_s: float = PADRAO_DB_TIMEOUT_S
 
     def __repr__(self) -> str:
         """Representação sem expor a chave da API."""
         return (
             f"Config(base_url={self.base_url!r}, modelo={self.modelo!r}, "
-            f"modelos_fallback={self.modelos_fallback!r}, db_path={str(self.db_path)!r})"
+            f"modelos_fallback={self.modelos_fallback!r}, db_path={str(self.db_path)!r}, "
+            f"db_timeout_s={self.db_timeout_s!r})"
         )
 
 
@@ -46,6 +49,20 @@ def _resolver_caminho(valor: str) -> Path:
     return caminho if caminho.is_absolute() else RAIZ_PROJETO / caminho
 
 
+def _ler_segundos(valor: str | None, padrao: float) -> float:
+    """Converte um tempo em segundos (aceita vírgula); vazio ou inválido usa o padrão."""
+    if not valor or not valor.strip():
+        return padrao
+    try:
+        segundos = float(valor.strip().replace(",", "."))
+    except ValueError:
+        segundos = 0.0
+    if segundos <= 0:
+        logger.warning("DB_TIMEOUT_S inválido (%r); usando %g s.", valor, padrao)
+        return padrao
+    return segundos
+
+
 def carregar_config() -> Config:
     """Lê o .env da raiz do projeto e devolve as configurações."""
     load_dotenv(RAIZ_PROJETO / ".env")
@@ -58,4 +75,5 @@ def carregar_config() -> Config:
         modelo=os.getenv("LLM_MODEL") or PADRAO_MODELO,
         modelos_fallback=_separar_lista(os.getenv("LLM_FALLBACK_MODELS") or PADRAO_FALLBACK),
         db_path=_resolver_caminho(os.getenv("DB_PATH") or PADRAO_DB_PATH),
+        db_timeout_s=_ler_segundos(os.getenv("DB_TIMEOUT_S"), PADRAO_DB_TIMEOUT_S),
     )
