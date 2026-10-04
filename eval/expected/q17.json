@@ -1,0 +1,88 @@
+{
+  "id": "q17",
+  "pergunta": "Quais são os melhores filmes?",
+  "sql": "SELECT m.titulo, m.ano_lancamento, m.id_filme, f.nota_tmdb, f.qtd_tmdb\nFROM fact_movies_performance f\nJOIN dim_movies m ON m.sk_movie_id = f.sk_movie_id\nWHERE f.qtd_tmdb >= 100\n  AND m.data_lancamento <= date('now')\nORDER BY f.nota_tmdb DESC, f.qtd_tmdb DESC\nLIMIT 10\n",
+  "chave": "titulo",
+  "colunas": [
+    "titulo",
+    "ano_lancamento",
+    "id_filme",
+    "nota_tmdb",
+    "qtd_tmdb"
+  ],
+  "linhas": [
+    [
+      "Break The Silence: The Movie",
+      2020,
+      "730647",
+      9.154,
+      175
+    ],
+    [
+      "Bts Permission To Dance On Stage - Seoul: Live Viewing",
+      2022,
+      "939984",
+      9.018,
+      113
+    ],
+    [
+      "Franco Escamilla: Por La Anécdota",
+      2018,
+      "529414",
+      9.0,
+      118
+    ],
+    [
+      "Bts: Permission To Dance On Stage - La",
+      2022,
+      "1022102",
+      8.993,
+      148
+    ],
+    [
+      "Metallica & San Francisco Symphony: S&m2",
+      2019,
+      "621949",
+      8.759,
+      110
+    ],
+    [
+      "Chivas: The Movie",
+      2018,
+      "553674",
+      8.655,
+      113
+    ],
+    [
+      "Folklore: The Long Pond Studio Sessions",
+      2020,
+      "768141",
+      8.635,
+      127
+    ],
+    [
+      "Everybody’s Everything",
+      2019,
+      "576712",
+      8.6,
+      256
+    ],
+    [
+      "Franco Escamilla: Bienvenido Al Mundo",
+      2019,
+      "595723",
+      8.6,
+      108
+    ],
+    [
+      "Rubius X",
+      2022,
+      "912826",
+      8.59,
+      139
+    ]
+  ],
+  "qtd_linhas": 10,
+  "tempo_s": 0.014,
+  "gerado_em": "2026-10-04T15:05:58-03:00"
+}

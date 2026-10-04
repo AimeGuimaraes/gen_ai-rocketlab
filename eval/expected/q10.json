@@ -1,0 +1,91 @@
+{
+  "id": "q10",
+  "pergunta": "Qual é a quantidade de filmes por gênero?",
+  "sql": "SELECT g.nome_genero, COUNT(*) AS qtd_filmes\nFROM bridge_movie_genre bg\nJOIN dim_genres g ON g.sk_genre_id = bg.sk_genre_id\nGROUP BY g.sk_genre_id, g.nome_genero\nORDER BY qtd_filmes DESC\n",
+  "chave": "nome_genero",
+  "colunas": [
+    "nome_genero",
+    "qtd_filmes"
+  ],
+  "linhas": [
+    [
+      "Drama",
+      28086
+    ],
+    [
+      "Documentary",
+      18082
+    ],
+    [
+      "Comedy",
+      16048
+    ],
+    [
+      "Horror",
+      8674
+    ],
+    [
+      "Thriller",
+      8540
+    ],
+    [
+      "Romance",
+      6209
+    ],
+    [
+      "Action",
+      5028
+    ],
+    [
+      "Animation",
+      3911
+    ],
+    [
+      "Crime",
+      3902
+    ],
+    [
+      "Tv Movie",
+      3336
+    ],
+    [
+      "Science Fiction",
+      3218
+    ],
+    [
+      "Family",
+      3140
+    ],
+    [
+      "Fantasy",
+      2722
+    ],
+    [
+      "Mystery",
+      2713
+    ],
+    [
+      "Music",
+      2384
+    ],
+    [
+      "Adventure",
+      2376
+    ],
+    [
+      "History",
+      1993
+    ],
+    [
+      "War",
+      804
+    ],
+    [
+      "Western",
+      355
+    ]
+  ],
+  "qtd_linhas": 19,
+  "tempo_s": 0.09,
+  "gerado_em": "2026-10-04T15:05:58-03:00"
+}

@@ -1,0 +1,99 @@
+{
+  "id": "q05",
+  "pergunta": "Quais filmes têm a maior divergência entre a nota TMDB e a nota IMDb?",
+  "sql": "SELECT m.titulo, m.ano_lancamento, m.id_filme, f.nota_tmdb, f.nota_imdb,\n       ROUND(ABS(f.nota_tmdb - f.nota_imdb), 2) AS divergencia\nFROM fact_movies_performance f\nJOIN dim_movies m ON m.sk_movie_id = f.sk_movie_id\nWHERE f.qtd_tmdb >= 100\n  AND f.nota_imdb IS NOT NULL\nORDER BY ABS(f.nota_tmdb - f.nota_imdb) DESC\nLIMIT 10\n",
+  "chave": "titulo",
+  "colunas": [
+    "titulo",
+    "ano_lancamento",
+    "id_filme",
+    "nota_tmdb",
+    "nota_imdb",
+    "divergencia"
+  ],
+  "linhas": [
+    [
+      "Me Against You: Mr. S's Vendetta",
+      2020,
+      "640344",
+      8.13,
+      1.7,
+      6.43
+    ],
+    [
+      "5gang: A Different Kind Of Christmas",
+      2019,
+      "659153",
+      8.2,
+      2.0,
+      6.2
+    ],
+    [
+      "Harry And Meghan: Escaping The Palace",
+      2021,
+      "858717",
+      6.761,
+      2.6,
+      4.16
+    ],
+    [
+      "The Ten Commandments: The Movie",
+      2016,
+      "372519",
+      7.214,
+      3.2,
+      4.01
+    ],
+    [
+      "Megalodon Rising",
+      2021,
+      "866462",
+      6.108,
+      2.1,
+      4.01
+    ],
+    [
+      "Arctic Apocalypse",
+      2019,
+      "621914",
+      6.2,
+      2.2,
+      4.0
+    ],
+    [
+      "Ape Vs. Monster",
+      2021,
+      "823087",
+      6.0,
+      2.2,
+      3.8
+    ],
+    [
+      "Megaboa",
+      2021,
+      "920081",
+      6.5,
+      2.7,
+      3.8
+    ],
+    [
+      "365 Days",
+      2020,
+      "664413",
+      7.063,
+      3.3,
+      3.76
+    ],
+    [
+      "A Nun's Curse",
+      2020,
+      "636879",
+      6.406,
+      2.7,
+      3.71
+    ]
+  ],
+  "qtd_linhas": 10,
+  "tempo_s": 0.012,
+  "gerado_em": "2026-10-04T15:05:37-03:00"
+}

@@ -1,0 +1,77 @@
+{
+  "id": "q01",
+  "pergunta": "Quais são os 10 filmes com maior receita em R$?",
+  "sql": "SELECT m.titulo, m.ano_lancamento, m.id_filme, f.receita_brl\nFROM fact_movies_performance f\nJOIN dim_movies m ON m.sk_movie_id = f.sk_movie_id\nWHERE f.receita_brl IS NOT NULL\n  AND m.data_lancamento <= date('now')\nORDER BY f.receita_brl DESC\nLIMIT 10\n",
+  "chave": "titulo",
+  "colunas": [
+    "titulo",
+    "ano_lancamento",
+    "id_filme",
+    "receita_brl"
+  ],
+  "linhas": [
+    [
+      "Avatar: The Way Of Water",
+      2022,
+      "76600",
+      12390136500.54
+    ],
+    [
+      "Avengers: Endgame",
+      2019,
+      "299534",
+      11094720000
+    ],
+    [
+      "Spider-man: No Way Home",
+      2021,
+      "634649",
+      10977782882.74
+    ],
+    [
+      "Avengers: Infinity War",
+      2018,
+      "299536",
+      7190430847.63
+    ],
+    [
+      "Top Gun: Maverick",
+      2022,
+      "361743",
+      7160804869.01
+    ],
+    [
+      "Barbie",
+      2023,
+      "346698",
+      6856159007.38
+    ],
+    [
+      "The Super Mario Bros. Movie",
+      2023,
+      "502356",
+      6838413799.1
+    ],
+    [
+      "The Lion King",
+      2019,
+      "420818",
+      6227552146.58
+    ],
+    [
+      "Frozen Ii",
+      2019,
+      "330457",
+      6094028191.32
+    ],
+    [
+      "Jurassic World: Fallen Kingdom",
+      2018,
+      "351286",
+      4934822930.85
+    ]
+  ],
+  "qtd_linhas": 10,
+  "tempo_s": 0.059,
+  "gerado_em": "2026-10-04T15:05:37-03:00"
+}

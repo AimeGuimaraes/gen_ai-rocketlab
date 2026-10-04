@@ -1,0 +1,99 @@
+{
+  "id": "q03",
+  "pergunta": "Quais filmes têm a maior margem de lucro, entre os que possuem receita e orçamento informados?",
+  "sql": "SELECT m.titulo, m.ano_lancamento, m.id_filme,\n       f.orcamento_usd, f.receita_usd,\n       ROUND((f.receita_usd - f.orcamento_usd) * 100.0 / f.receita_usd, 2) AS margem_pct\nFROM fact_movies_performance f\nJOIN dim_movies m ON m.sk_movie_id = f.sk_movie_id\nWHERE f.receita_usd IS NOT NULL\n  AND f.orcamento_usd IS NOT NULL\n  AND f.orcamento_usd >= 100000\n  AND f.receita_usd >= 100000\nORDER BY margem_pct DESC\nLIMIT 10\n",
+  "chave": "titulo",
+  "colunas": [
+    "titulo",
+    "ano_lancamento",
+    "id_filme",
+    "orcamento_usd",
+    "receita_usd",
+    "margem_pct"
+  ],
+  "linhas": [
+    [
+      "Secret Superstar",
+      2017,
+      "441889",
+      286284,
+      137416709,
+      99.79
+    ],
+    [
+      "Dragon Ball Super: Broly",
+      2018,
+      "503314",
+      1000000,
+      125002821,
+      99.2
+    ],
+    [
+      "The Farewell",
+      2019,
+      "565310",
+      250300,
+      23076657,
+      98.92
+    ],
+    [
+      "The Villainess",
+      2017,
+      "437109",
+      125000,
+      8737458,
+      98.57
+    ],
+    [
+      "Terrifier 2",
+      2022,
+      "663712",
+      250000,
+      15065239,
+      98.34
+    ],
+    [
+      "Get Out",
+      2017,
+      "419430",
+      4500000,
+      255407969,
+      98.24
+    ],
+    [
+      "Tunnel",
+      2016,
+      "390497",
+      1000000,
+      52444295,
+      98.09
+    ],
+    [
+      "Winnie The Pooh: Blood And Honey",
+      2023,
+      "980078",
+      100000,
+      5200000,
+      98.08
+    ],
+    [
+      "His Only Son",
+      2023,
+      "761851",
+      250000,
+      11480048,
+      97.82
+    ],
+    [
+      "Wwe Money In The Bank 2019",
+      2019,
+      "603466",
+      140800,
+      5556675,
+      97.47
+    ]
+  ],
+  "qtd_linhas": 10,
+  "tempo_s": 0.007,
+  "gerado_em": "2026-10-04T15:05:37-03:00"
+}

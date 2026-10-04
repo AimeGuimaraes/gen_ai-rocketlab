@@ -1,0 +1,88 @@
+{
+  "id": "q13",
+  "pergunta": "Quais são os filmes mais avaliados pelos usuários?",
+  "sql": "SELECT m.titulo, m.ano_lancamento, m.id_filme,\n       r.qtd_avaliacoes_usuarios, r.nota_media_usuarios\nFROM dim_reviews r\nJOIN dim_movies m ON m.sk_movie_id = r.sk_movie_id\nORDER BY r.qtd_avaliacoes_usuarios DESC, r.nota_media_usuarios DESC\nLIMIT 10\n",
+  "chave": "titulo",
+  "colunas": [
+    "titulo",
+    "ano_lancamento",
+    "id_filme",
+    "qtd_avaliacoes_usuarios",
+    "nota_media_usuarios"
+  ],
+  "linhas": [
+    [
+      "Die Hart 2: Die Harter",
+      2024,
+      "1391481",
+      13,
+      4.99
+    ],
+    [
+      "Die Hart 2: Die Harter",
+      2024,
+      "1376602",
+      12,
+      6.49
+    ],
+    [
+      "Die Hart: Die Harter",
+      2024,
+      "1556716",
+      11,
+      5.56
+    ],
+    [
+      "Die Hart: Die Harter",
+      2024,
+      "1474469",
+      10,
+      5.97
+    ],
+    [
+      "Die Hart 2: Die Harter",
+      2024,
+      "1734206",
+      10,
+      5.42
+    ],
+    [
+      "Die Hart: Die Harter",
+      2024,
+      "1336604",
+      10,
+      4.45
+    ],
+    [
+      "Die Hart: Die Harter",
+      2024,
+      "1586934",
+      10,
+      4.04
+    ],
+    [
+      "Die Hart: Die Harter",
+      2024,
+      "1700078",
+      9,
+      6.49
+    ],
+    [
+      "Die Hart 2: Die Harter",
+      2024,
+      "1463021",
+      9,
+      6.43
+    ],
+    [
+      "Duro De Atuar 2",
+      2024,
+      "1569781",
+      9,
+      6.11
+    ]
+  ],
+  "qtd_linhas": 10,
+  "tempo_s": 0.037,
+  "gerado_em": "2026-10-04T15:05:58-03:00"
+}

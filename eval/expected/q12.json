@@ -1,0 +1,111 @@
+{
+  "id": "q12",
+  "pergunta": "Qual gênero tem a maior margem de lucro média?",
+  "sql": "SELECT g.nome_genero,\n       ROUND(SUM(f.lucro_usd) * 100.0 / SUM(f.receita_usd), 2) AS margem_agregada_pct,\n       COUNT(*) AS qtd_filmes\nFROM fact_movies_performance f\nJOIN bridge_movie_genre bg ON bg.sk_movie_id = f.sk_movie_id\nJOIN dim_genres g ON g.sk_genre_id = bg.sk_genre_id\nWHERE f.receita_usd IS NOT NULL\n  AND f.orcamento_usd IS NOT NULL\n  AND f.orcamento_usd >= 100000\n  AND f.receita_usd >= 100000\nGROUP BY g.sk_genre_id, g.nome_genero\nORDER BY margem_agregada_pct DESC\n",
+  "chave": "nome_genero",
+  "colunas": [
+    "nome_genero",
+    "margem_agregada_pct",
+    "qtd_filmes"
+  ],
+  "linhas": [
+    [
+      "Horror",
+      76.02,
+      139
+    ],
+    [
+      "Adventure",
+      69.63,
+      231
+    ],
+    [
+      "Animation",
+      69.56,
+      87
+    ],
+    [
+      "Science Fiction",
+      69.11,
+      117
+    ],
+    [
+      "Family",
+      69.01,
+      126
+    ],
+    [
+      "Action",
+      66.85,
+      337
+    ],
+    [
+      "War",
+      66.78,
+      56
+    ],
+    [
+      "Music",
+      66.68,
+      40
+    ],
+    [
+      "Fantasy",
+      65.58,
+      123
+    ],
+    [
+      "Comedy",
+      65.42,
+      348
+    ],
+    [
+      "Drama",
+      63.91,
+      507
+    ],
+    [
+      "Romance",
+      62.5,
+      136
+    ],
+    [
+      "Mystery",
+      60.64,
+      109
+    ],
+    [
+      "Tv Movie",
+      60.63,
+      2
+    ],
+    [
+      "Thriller",
+      59.2,
+      287
+    ],
+    [
+      "History",
+      53.26,
+      95
+    ],
+    [
+      "Crime",
+      50.89,
+      147
+    ],
+    [
+      "Documentary",
+      33.63,
+      13
+    ],
+    [
+      "Western",
+      3.99,
+      9
+    ]
+  ],
+  "qtd_linhas": 19,
+  "tempo_s": 0.075,
+  "gerado_em": "2026-10-04T15:05:58-03:00"
+}

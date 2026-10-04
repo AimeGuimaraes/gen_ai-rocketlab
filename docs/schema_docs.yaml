@@ -253,8 +253,9 @@ regras_de_negocio:
     titulo: Dupla ator-diretor que mais trabalhou junta
     regra: >-
       CTE diretores (bridge_movie_person + dim_people com tipo_pessoa = 'Diretor'), join com
-      bridge_movie_person pelo sk_movie_id e com dim_people como 'Ator'. GROUP BY os dois
-      sk_person_id, ORDER BY filmes DESC, ator, diretor (há empates). Mostrar os nomes.
+      bridge_movie_person pelo sk_movie_id e com dim_people como 'Ator'. Excluir os pares em que
+      ator e diretor são a mesma pessoa (mesmo nome_pessoa, pois o sk_person_id muda por papel).
+      GROUP BY os dois sk_person_id, ORDER BY filmes DESC, ator, diretor (há empates). Mostrar os nomes.
   - id: P10
     titulo: Quantidade de filmes por gênero
     regra: >-

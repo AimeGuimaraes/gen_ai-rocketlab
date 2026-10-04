@@ -1,0 +1,111 @@
+{
+  "id": "q02",
+  "pergunta": "Qual é o lucro médio por gênero, considerando apenas filmes com receita informada?",
+  "sql": "SELECT g.nome_genero,\n       ROUND(AVG(f.lucro_usd), 2) AS lucro_medio_usd,\n       COUNT(*) AS qtd_filmes\nFROM fact_movies_performance f\nJOIN bridge_movie_genre bg ON bg.sk_movie_id = f.sk_movie_id\nJOIN dim_genres g ON g.sk_genre_id = bg.sk_genre_id\nWHERE f.receita_usd IS NOT NULL\n  AND f.orcamento_usd IS NOT NULL\nGROUP BY g.sk_genre_id, g.nome_genero\nORDER BY lucro_medio_usd DESC\n",
+  "chave": "nome_genero",
+  "colunas": [
+    "nome_genero",
+    "lucro_medio_usd",
+    "qtd_filmes"
+  ],
+  "linhas": [
+    [
+      "Science Fiction",
+      183055334.67,
+      134
+    ],
+    [
+      "Adventure",
+      181399653.22,
+      246
+    ],
+    [
+      "Fantasy",
+      126985391.65,
+      134
+    ],
+    [
+      "Animation",
+      126541446.29,
+      97
+    ],
+    [
+      "Family",
+      116663901.69,
+      142
+    ],
+    [
+      "Action",
+      114110307.89,
+      379
+    ],
+    [
+      "War",
+      63179459.23,
+      57
+    ],
+    [
+      "Music",
+      52139511.67,
+      45
+    ],
+    [
+      "Comedy",
+      50932226.53,
+      403
+    ],
+    [
+      "Horror",
+      41516368.31,
+      168
+    ],
+    [
+      "History",
+      36228461.98,
+      96
+    ],
+    [
+      "Mystery",
+      33150658.77,
+      127
+    ],
+    [
+      "Thriller",
+      32662809.98,
+      321
+    ],
+    [
+      "Drama",
+      31859537.94,
+      602
+    ],
+    [
+      "Romance",
+      31601076.12,
+      152
+    ],
+    [
+      "Crime",
+      29494464.5,
+      166
+    ],
+    [
+      "Tv Movie",
+      310076.0,
+      3
+    ],
+    [
+      "Documentary",
+      -179402.83,
+      40
+    ],
+    [
+      "Western",
+      -626512.64,
+      11
+    ]
+  ],
+  "qtd_linhas": 19,
+  "tempo_s": 0.133,
+  "gerado_em": "2026-10-04T15:05:37-03:00"
+}

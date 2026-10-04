@@ -1,0 +1,66 @@
+{
+  "id": "q11",
+  "pergunta": "Qual produtora teve o maior lucro total?",
+  "sql": "SELECT c.nome_produtora AS nome,\n       ROUND(SUM(f.lucro_usd), 2) AS lucro_total_usd,\n       COUNT(*) AS qtd_filmes\nFROM bridge_movie_company bc\nJOIN dim_companies c ON c.sk_company_id = bc.sk_company_id\nJOIN fact_movies_performance f ON f.sk_movie_id = bc.sk_movie_id\nWHERE f.receita_usd IS NOT NULL\n  AND f.orcamento_usd IS NOT NULL\nGROUP BY c.sk_company_id, c.nome_produtora\nORDER BY lucro_total_usd DESC\nLIMIT 10\n",
+  "chave": "nome",
+  "colunas": [
+    "nome",
+    "lucro_total_usd",
+    "qtd_filmes"
+  ],
+  "linhas": [
+    [
+      "Marvel Studios",
+      14897936776.0,
+      17
+    ],
+    [
+      "Universal Pictures",
+      13691646318.0,
+      91
+    ],
+    [
+      "Columbia Pictures",
+      9853057126.0,
+      52
+    ],
+    [
+      "Warner Bros. Pictures",
+      9490342370.0,
+      61
+    ],
+    [
+      "Walt Disney Pictures",
+      9431052715.0,
+      34
+    ],
+    [
+      "20th Century Fox",
+      6539720788.0,
+      36
+    ],
+    [
+      "Pascal Pictures",
+      5454787221.0,
+      9
+    ],
+    [
+      "Paramount",
+      5420774477.0,
+      50
+    ],
+    [
+      "New Line Cinema",
+      4368405475.0,
+      33
+    ],
+    [
+      "Dc Films",
+      4147832105.0,
+      12
+    ]
+  ],
+  "qtd_linhas": 10,
+  "tempo_s": 0.227,
+  "gerado_em": "2026-10-04T15:05:58-03:00"
+}

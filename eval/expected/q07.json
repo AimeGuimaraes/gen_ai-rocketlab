@@ -1,0 +1,55 @@
+{
+  "id": "q07",
+  "pergunta": "Qual ator teve mais participações em filmes lançados nos últimos 5 anos?",
+  "sql": "SELECT p.nome_pessoa AS nome, COUNT(DISTINCT bp.sk_movie_id) AS qtd_filmes\nFROM bridge_movie_person bp\nJOIN dim_people p ON p.sk_person_id = bp.sk_person_id\nJOIN dim_movies m ON m.sk_movie_id = bp.sk_movie_id\nWHERE p.tipo_pessoa = 'Ator'\n  AND m.data_lancamento BETWEEN date('now', '-5 years') AND date('now')\nGROUP BY p.sk_person_id, p.nome_pessoa\nORDER BY qtd_filmes DESC, nome\nLIMIT 10\n",
+  "chave": "nome",
+  "colunas": [
+    "nome",
+    "qtd_filmes"
+  ],
+  "linhas": [
+    [
+      "Eric Roberts",
+      71
+    ],
+    [
+      "Vennela Kishore",
+      42
+    ],
+    [
+      "Yogi Babu",
+      39
+    ],
+    [
+      "Ahomas Hailwuttem",
+      37
+    ],
+    [
+      "Anton Pelizzari",
+      37
+    ],
+    [
+      "Cameron Nichols",
+      37
+    ],
+    [
+      "David Love",
+      37
+    ],
+    [
+      "Jazzyjoeyjr",
+      37
+    ],
+    [
+      "John Whinfield",
+      37
+    ],
+    [
+      "Michael Paré",
+      31
+    ]
+  ],
+  "qtd_linhas": 10,
+  "tempo_s": 3.166,
+  "gerado_em": "2026-10-04T15:05:41-03:00"
+}

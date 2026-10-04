@@ -1,0 +1,99 @@
+{
+  "id": "q14",
+  "pergunta": "Em quais filmes a nota média dos usuários mais diverge da nota IMDb?",
+  "sql": "SELECT m.titulo, m.ano_lancamento, m.id_filme,\n       r.nota_media_usuarios, f.nota_imdb,\n       ROUND(ABS(r.nota_media_usuarios - f.nota_imdb), 2) AS divergencia\nFROM dim_reviews r\nJOIN dim_movies m ON m.sk_movie_id = r.sk_movie_id\nJOIN fact_movies_performance f ON f.sk_movie_id = r.sk_movie_id\nWHERE r.qtd_avaliacoes_usuarios >= 3\n  AND f.qtd_imdb >= 100\n  AND f.nota_imdb IS NOT NULL\nORDER BY ABS(r.nota_media_usuarios - f.nota_imdb) DESC\nLIMIT 10\n",
+  "chave": "titulo",
+  "colunas": [
+    "titulo",
+    "ano_lancamento",
+    "id_filme",
+    "nota_media_usuarios",
+    "nota_imdb",
+    "divergencia"
+  ],
+  "linhas": [
+    [
+      "Bittersweet Memories: 14 Isolated Days To Make An Album",
+      2023,
+      "1324152",
+      2.43,
+      9.5,
+      7.07
+    ],
+    [
+      "Save Ralph",
+      2021,
+      "1758965",
+      1.37,
+      8.4,
+      7.03
+    ],
+    [
+      "One Piece Fan Letter",
+      2024,
+      "1388791",
+      2.83,
+      9.2,
+      6.37
+    ],
+    [
+      "One Piece Fan Letter",
+      2024,
+      "1404726",
+      2.97,
+      9.2,
+      6.23
+    ],
+    [
+      "The Internet And You",
+      2016,
+      "1592991",
+      3.7,
+      9.1,
+      5.4
+    ],
+    [
+      "The Rose Family",
+      2020,
+      "733123",
+      2.43,
+      7.7,
+      5.27
+    ],
+    [
+      "Ena: Temptation Stairway",
+      2021,
+      "1733897",
+      3.63,
+      8.8,
+      5.17
+    ],
+    [
+      "Bunch Of Kunst - A Film About Sleaford Mods",
+      2017,
+      "454035",
+      2.23,
+      7.4,
+      5.17
+    ],
+    [
+      "Velvet Buzzsaw",
+      2019,
+      "463684",
+      0.8,
+      5.7,
+      4.9
+    ],
+    [
+      "Queen Rock Montreal",
+      2024,
+      "1404888",
+      3.5,
+      8.4,
+      4.9
+    ]
+  ],
+  "qtd_linhas": 10,
+  "tempo_s": 0.003,
+  "gerado_em": "2026-10-04T15:05:58-03:00"
+}

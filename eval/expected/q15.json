@@ -1,0 +1,77 @@
+{
+  "id": "q15",
+  "pergunta": "Quais foram os 10 filmes com maior receita lançados entre 2018 e 2020?",
+  "sql": "SELECT m.titulo, m.ano_lancamento, m.id_filme, f.receita_usd\nFROM fact_movies_performance f\nJOIN dim_movies m ON m.sk_movie_id = f.sk_movie_id\nWHERE f.receita_usd IS NOT NULL\n  AND m.data_lancamento BETWEEN '2018-01-01' AND '2020-12-31'\nORDER BY f.receita_usd DESC\nLIMIT 10\n",
+  "chave": "titulo",
+  "colunas": [
+    "titulo",
+    "ano_lancamento",
+    "id_filme",
+    "receita_usd"
+  ],
+  "linhas": [
+    [
+      "Avengers: Endgame",
+      2019,
+      "299534",
+      2800000000
+    ],
+    [
+      "Avengers: Infinity War",
+      2018,
+      "299536",
+      2052415039
+    ],
+    [
+      "The Lion King",
+      2019,
+      "420818",
+      1663075401
+    ],
+    [
+      "Frozen Ii",
+      2019,
+      "330457",
+      1450026933
+    ],
+    [
+      "Black Panther",
+      2018,
+      "284054",
+      1349926083
+    ],
+    [
+      "Jurassic World: Fallen Kingdom",
+      2018,
+      "351286",
+      1310466296
+    ],
+    [
+      "Incredibles 2",
+      2018,
+      "260513",
+      1242805359
+    ],
+    [
+      "Aquaman",
+      2018,
+      "297802",
+      1148528393
+    ],
+    [
+      "Spider-man: Far From Home",
+      2019,
+      "429617",
+      1131927996
+    ],
+    [
+      "Captain Marvel",
+      2019,
+      "299537",
+      1131416446
+    ]
+  ],
+  "qtd_linhas": 10,
+  "tempo_s": 0.009,
+  "gerado_em": "2026-10-04T15:05:58-03:00"
+}

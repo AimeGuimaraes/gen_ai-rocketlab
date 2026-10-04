@@ -1,0 +1,69 @@
+{
+  "id": "q09",
+  "pergunta": "Qual dupla ator-diretor mais trabalhou junta?",
+  "sql": "WITH diretores AS (\n  SELECT bp.sk_movie_id, bp.sk_person_id AS sk_diretor, p.nome_pessoa AS diretor\n  FROM bridge_movie_person bp\n  JOIN dim_people p ON p.sk_person_id = bp.sk_person_id\n  WHERE p.tipo_pessoa = 'Diretor'\n)\nSELECT pa.nome_pessoa AS ator, d.diretor, COUNT(*) AS filmes_juntos\nFROM diretores d\nJOIN bridge_movie_person ba ON ba.sk_movie_id = d.sk_movie_id\nJOIN dim_people pa ON pa.sk_person_id = ba.sk_person_id\nWHERE pa.tipo_pessoa = 'Ator'\n  AND pa.nome_pessoa <> d.diretor\nGROUP BY pa.sk_person_id, d.sk_diretor\nORDER BY filmes_juntos DESC, ator, d.diretor\nLIMIT 10\n",
+  "chave": [
+    "ator",
+    "diretor"
+  ],
+  "colunas": [
+    "ator",
+    "diretor",
+    "filmes_juntos"
+  ],
+  "linhas": [
+    [
+      "Joe Anoa'i",
+      "Kevin Dunn",
+      37
+    ],
+    [
+      "Colby Lopez",
+      "Kevin Dunn",
+      32
+    ],
+    [
+      "Ahomas Hailwuttem",
+      "Chad Payne",
+      31
+    ],
+    [
+      "Anton Pelizzari",
+      "Chad Payne",
+      31
+    ],
+    [
+      "Cameron Nichols",
+      "Chad Payne",
+      31
+    ],
+    [
+      "David Love",
+      "Chad Payne",
+      31
+    ],
+    [
+      "Jazzyjoeyjr",
+      "Chad Payne",
+      31
+    ],
+    [
+      "John Whinfield",
+      "Chad Payne",
+      31
+    ],
+    [
+      "Jeff Kirkendall",
+      "Mark Polonia",
+      25
+    ],
+    [
+      "Vivica A. Fox",
+      "David Decoteau",
+      25
+    ]
+  ],
+  "qtd_linhas": 10,
+  "tempo_s": 14.732,
+  "gerado_em": "2026-10-04T15:05:58-03:00"
+}

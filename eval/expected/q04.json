@@ -1,0 +1,53 @@
+{
+  "id": "q04",
+  "pergunta": "Quais são os 5 filmes mais populares?",
+  "sql": "SELECT m.titulo, m.ano_lancamento, m.id_filme, f.popularidade, f.qtd_tmdb\nFROM fact_movies_performance f\nJOIN dim_movies m ON m.sk_movie_id = f.sk_movie_id\nWHERE f.popularidade IS NOT NULL\n  AND f.qtd_tmdb >= 100\n  AND m.data_lancamento <= date('now')\nORDER BY f.popularidade DESC\nLIMIT 5\n",
+  "chave": "titulo",
+  "colunas": [
+    "titulo",
+    "ano_lancamento",
+    "id_filme",
+    "popularidade",
+    "qtd_tmdb"
+  ],
+  "linhas": [
+    [
+      "Blue Beetle",
+      2023,
+      "565770",
+      2994.357,
+      1023
+    ],
+    [
+      "Gran Turismo",
+      2023,
+      "980489",
+      2680.593,
+      702
+    ],
+    [
+      "Meg 2: The Trench",
+      2023,
+      "615656",
+      1567.273,
+      2034
+    ],
+    [
+      "Retribution",
+      2023,
+      "762430",
+      1547.22,
+      258
+    ],
+    [
+      "Talk To Me",
+      2023,
+      "1008042",
+      1458.514,
+      973
+    ]
+  ],
+  "qtd_linhas": 5,
+  "tempo_s": 0.027,
+  "gerado_em": "2026-10-04T15:05:37-03:00"
+}

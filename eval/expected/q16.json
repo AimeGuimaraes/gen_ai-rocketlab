@@ -1,0 +1,47 @@
+{
+  "id": "q16",
+  "pergunta": "Quais os 5 filmes de terror com maior faturamento?",
+  "sql": "SELECT m.titulo, m.ano_lancamento, m.id_filme, f.receita_usd\nFROM fact_movies_performance f\nJOIN dim_movies m ON m.sk_movie_id = f.sk_movie_id\nJOIN bridge_movie_genre bg ON bg.sk_movie_id = f.sk_movie_id\nJOIN dim_genres g ON g.sk_genre_id = bg.sk_genre_id\nWHERE g.nome_genero = 'Horror'\n  AND f.receita_usd IS NOT NULL\n  AND m.data_lancamento <= date('now')\nORDER BY f.receita_usd DESC\nLIMIT 5\n",
+  "chave": "titulo",
+  "colunas": [
+    "titulo",
+    "ano_lancamento",
+    "id_filme",
+    "receita_usd"
+  ],
+  "linhas": [
+    [
+      "It",
+      2017,
+      "346364",
+      701800000
+    ],
+    [
+      "The Meg",
+      2018,
+      "345940",
+      530517320
+    ],
+    [
+      "It Chapter Two",
+      2019,
+      "474350",
+      473122525
+    ],
+    [
+      "The Mummy",
+      2017,
+      "282035",
+      409231607
+    ],
+    [
+      "Meg 2: The Trench",
+      2023,
+      "615656",
+      384056482
+    ]
+  ],
+  "qtd_linhas": 5,
+  "tempo_s": 0.03,
+  "gerado_em": "2026-10-04T15:05:58-03:00"
+}

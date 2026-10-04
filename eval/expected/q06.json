@@ -1,0 +1,71 @@
+{
+  "id": "q06",
+  "pergunta": "Qual é a nota média IMDb por ano de lançamento?",
+  "sql": "SELECT m.ano_lancamento,\n       ROUND(AVG(f.nota_imdb), 2) AS nota_media_imdb,\n       COUNT(*) AS qtd_filmes\nFROM fact_movies_performance f\nJOIN dim_movies m ON m.sk_movie_id = f.sk_movie_id\nWHERE f.nota_imdb IS NOT NULL\n  AND m.data_lancamento <= date('now')\nGROUP BY m.ano_lancamento\nORDER BY m.ano_lancamento\n",
+  "chave": "ano_lancamento",
+  "colunas": [
+    "ano_lancamento",
+    "nota_media_imdb",
+    "qtd_filmes"
+  ],
+  "linhas": [
+    [
+      2016,
+      6.34,
+      10381
+    ],
+    [
+      2017,
+      6.34,
+      11189
+    ],
+    [
+      2018,
+      6.27,
+      11327
+    ],
+    [
+      2019,
+      6.26,
+      11637
+    ],
+    [
+      2020,
+      6.24,
+      9534
+    ],
+    [
+      2021,
+      6.23,
+      9578
+    ],
+    [
+      2022,
+      6.23,
+      9887
+    ],
+    [
+      2023,
+      6.23,
+      7809
+    ],
+    [
+      2024,
+      6.15,
+      1621
+    ],
+    [
+      2025,
+      6.58,
+      4
+    ],
+    [
+      2026,
+      7.5,
+      1
+    ]
+  ],
+  "qtd_linhas": 11,
+  "tempo_s": 0.218,
+  "gerado_em": "2026-10-04T15:05:37-03:00"
+}

@@ -1,0 +1,66 @@
+{
+  "id": "q08",
+  "pergunta": "Quais diretores têm a maior nota média, com no mínimo 5 filmes?",
+  "sql": "SELECT p.nome_pessoa AS nome,\n       ROUND(AVG(f.nota_tmdb), 2) AS nota_media_tmdb,\n       COUNT(*) AS qtd_filmes\nFROM bridge_movie_person bp\nJOIN dim_people p ON p.sk_person_id = bp.sk_person_id\nJOIN dim_movies m ON m.sk_movie_id = bp.sk_movie_id\nJOIN fact_movies_performance f ON f.sk_movie_id = bp.sk_movie_id\nWHERE p.tipo_pessoa = 'Diretor'\n  AND f.qtd_tmdb >= 100\n  AND m.data_lancamento <= date('now')\nGROUP BY p.sk_person_id, p.nome_pessoa\nHAVING COUNT(*) >= 5\nORDER BY nota_media_tmdb DESC, qtd_filmes DESC, nome\nLIMIT 10\n",
+  "chave": "nome",
+  "colunas": [
+    "nome",
+    "nota_media_tmdb",
+    "qtd_filmes"
+  ],
+  "linhas": [
+    [
+      "Matt Peters",
+      7.52,
+      6
+    ],
+    [
+      "Stan Lathan",
+      7.49,
+      6
+    ],
+    [
+      "Taika Waititi",
+      7.42,
+      5
+    ],
+    [
+      "David Leitch",
+      7.07,
+      5
+    ],
+    [
+      "Sam Liu",
+      7.01,
+      13
+    ],
+    [
+      "Hirokazu Koreeda",
+      7.0,
+      5
+    ],
+    [
+      "English",
+      6.6,
+      10
+    ],
+    [
+      "Clint Eastwood",
+      6.57,
+      5
+    ],
+    [
+      "Tyler Perry",
+      6.54,
+      7
+    ],
+    [
+      "Riccardo Milani",
+      6.43,
+      5
+    ]
+  ],
+  "qtd_linhas": 10,
+  "tempo_s": 2.611,
+  "gerado_em": "2026-10-04T15:05:43-03:00"
+}
