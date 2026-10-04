@@ -47,6 +47,8 @@ def test_colunas_do_yaml_batem_com_o_banco() -> None:
 def test_texto_gerado_tem_tabelas_e_regras() -> None:
     texto = gerar_texto_schema()
     assert all(f"### {tabela} " in texto for tabela in TABELAS)
+    assert "### aux_vinculo_papel " in texto
+    assert "aux_vinculo_papel.id_pes -> dim_people.rowid" in texto
     assert "P14 " in texto and "G1 " in texto
     assert "limitacoes_conhecidas" not in texto and "notas_desempenho" not in texto
     assert 0 < contar_tokens_aprox(texto) < 8000

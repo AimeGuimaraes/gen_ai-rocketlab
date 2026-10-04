@@ -1,7 +1,8 @@
 # Dicionário de dados da camada Gold da CineData (cinerocket.db, SQLite, somente leitura).
 # Fonte: notebooks/01_exploracao.ipynb e consultas de verificação da Etapa 2.
 # Este arquivo é a fonte única do esquema e das regras usadas no prompt do agente
-# (ver src/cinedata_agent/schema.py). As seções limitacoes_conhecidas e
+# (ver src/cinedata_agent/schema.py), incluindo tabelas_auxiliares (criadas em memória por
+# src/cinedata_agent/db.py). As seções limitacoes_conhecidas e
 # notas_desempenho são documentação e não entram no prompt.
 
 convencoes:
@@ -137,6 +138,24 @@ tabelas:
       text: {tipo: VARCHAR(4000), descricao: Texto da avaliação (português).}
       created_at: {tipo: DATETIME, descricao: Data e hora da avaliação.}
 
+# Tabelas criadas na inicialização do agente (src/cinedata_agent/db.py), só na cópia em memória.
+# Não existem no arquivo cinerocket.db.
+tabelas_auxiliares:
+  aux_vinculo_papel:
+    descricao: >-
+      Auxiliar (criada na inicialização): 1 linha por vínculo filme–pessoa–papel, igual a
+      bridge_movie_person, mas com chaves inteiras (rowid) e o papel já incluído. Muito mais rápida:
+      use-a em toda pergunta que conte ou agrupe pessoas por filme. Índice em
+      (tipo_pessoa, id_mov, id_pes).
+    chave_primaria: (id_mov, id_pes)
+    ligacoes:
+      - id_mov -> dim_movies.rowid (N:1)
+      - id_pes -> dim_people.rowid (N:1)
+    colunas:
+      id_mov: {tipo: INTEGER, descricao: "Filme: rowid de dim_movies (JOIN dim_movies m ON m.rowid = id_mov)."}
+      id_pes: {tipo: INTEGER, descricao: "Pessoa em um papel: rowid de dim_people (JOIN dim_people p ON p.rowid = id_pes); agrupar por id_pes."}
+      tipo_pessoa: {tipo: TEXT, descricao: "Papel copiado de dim_people: Ator, Diretor ou Roteirista."}
+
 regras_de_negocio:
   # --- Regras gerais ---
   - id: G1
@@ -189,7 +208,8 @@ regras_de_negocio:
     regra: >-
       O papel está em dim_people.tipo_pessoa ('Ator', 'Diretor', 'Roteirista'), sempre filtrado no
       join com bridge_movie_person. A mesma pessoa tem um sk_person_id por papel: agrupar por
-      sk_person_id.
+      sk_person_id. Para contar ou agrupar pessoas e filmes, prefira aux_vinculo_papel (papel já
+      incluído, chaves inteiras; agrupar por id_pes), que é muito mais rápida.
   - id: G10
     titulo: Gêneros em inglês
     regra: >-
@@ -242,20 +262,22 @@ regras_de_negocio:
   - id: P7
     titulo: Ator com mais filmes nos últimos 5 anos
     regra: >-
-      tipo_pessoa = 'Ator' e o filtro de "últimos N anos" (G7); COUNT(DISTINCT sk_movie_id) GROUP BY
-      sk_person_id, ORDER BY filmes DESC.
+      Usar aux_vinculo_papel com tipo_pessoa = 'Ator', JOIN dim_movies ON rowid = id_mov para o
+      filtro de "últimos N anos" (G7) e dim_people ON rowid = id_pes para o nome;
+      COUNT(DISTINCT id_mov) GROUP BY id_pes, ORDER BY filmes DESC, nome.
   - id: P8
     titulo: Diretores com maior nota média (mínimo de 5 filmes)
     regra: >-
-      tipo_pessoa = 'Diretor', AVG(nota_tmdb) só de filmes com qtd_tmdb >= 100 e já lançados,
-      GROUP BY sk_person_id HAVING COUNT(*) >= 5.
+      Usar aux_vinculo_papel com tipo_pessoa = 'Diretor', JOIN dim_movies ON rowid = id_mov e
+      fact_movies_performance pelo sk_movie_id; AVG(nota_tmdb) só de filmes com qtd_tmdb >= 100 e já
+      lançados, GROUP BY id_pes HAVING COUNT(*) >= 5. Nome via dim_people ON rowid = id_pes.
   - id: P9
     titulo: Dupla ator-diretor que mais trabalhou junta
     regra: >-
-      CTE diretores (bridge_movie_person + dim_people com tipo_pessoa = 'Diretor'), join com
-      bridge_movie_person pelo sk_movie_id e com dim_people como 'Ator'. Excluir os pares em que
-      ator e diretor são a mesma pessoa (mesmo nome_pessoa, pois o sk_person_id muda por papel).
-      GROUP BY os dois sk_person_id, ORDER BY filmes DESC, ator, diretor (há empates). Mostrar os nomes.
+      Self-join de aux_vinculo_papel: d com tipo_pessoa = 'Diretor' e a com tipo_pessoa = 'Ator' no
+      mesmo id_mov; nomes via dim_people ON rowid = id_pes (uma vez para cada papel). Excluir os pares
+      em que ator e diretor são a mesma pessoa (mesmo nome_pessoa, pois a chave muda por papel).
+      GROUP BY a.id_pes, d.id_pes, ORDER BY filmes DESC, ator, diretor (há empates). Mostrar os nomes.
   - id: P10
     titulo: Quantidade de filmes por gênero
     regra: >-
@@ -317,9 +339,17 @@ notas_desempenho:
     - {consulta: P8, cenario: disco, tempo: 10.5}
     - {consulta: P8, cenario: ":memory:, tabelas originais", tempo: 4.2}
     - {consulta: P8, cenario: ":memory: + aux_vinculo_papel", tempo: 0.35}
+    # Etapa 4 (2026-10-04), consultas finais das regras P7–P9 via db.run_query, 1 execução:
+    - {consulta: P7, cenario: "Etapa 4: db.py (:memory: + aux_vinculo_papel)", tempo: 0.25}
+    - {consulta: P8, cenario: "Etapa 4: db.py (:memory: + aux_vinculo_papel)", tempo: 0.08}
+    - {consulta: P9, cenario: "Etapa 4: db.py (:memory: + aux_vinculo_papel)", tempo: 1.4}
   custo_memoria: >-
     Cópia para :memory: via backup: 1,3–5,4 s e +635 MB. Criação de aux_vinculo_papel com índice:
-    8,6 s. Total de ~10 s de inicialização e ~700 MB de RAM.
+    8,6 s. Total de ~10 s de inicialização e ~700 MB de RAM. Na Etapa 4 (db.py, inserção ordenada
+    por papel e filme): 4,3 s e +689 MB.
+  implementacao: >-
+    Recomendação implementada na Etapa 4 em src/cinedata_agent/db.py; as regras P7, P8 e P9 usam
+    aux_vinculo_papel e dão o mesmo resultado de eval/expected (verificado em tests/test_db.py).
   recomendacao_etapa_4: >-
     Ao iniciar: abrir o banco com mode=ro, copiar para :memory: com backup(), aplicar
     PRAGMA temp_store=MEMORY, criar aux_vinculo_papel(id_mov, id_pes, tipo_pessoa) com os rowid de

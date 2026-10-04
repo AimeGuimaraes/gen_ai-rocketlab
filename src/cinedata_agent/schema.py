@@ -28,17 +28,18 @@ def _formatar_coluna(nome: str, info: dict[str, Any]) -> str:
 def gerar_texto_schema(caminho: Path | None = None) -> str:
     """Gera o texto compacto de esquema e regras de negócio para o prompt do agente."""
     schema = carregar_schema(caminho)
+    todas_tabelas = {**schema["tabelas"], **schema.get("tabelas_auxiliares", {})}
     linhas: list[str] = ["## Convenções"]
     linhas += [f"- {item}" for item in schema["convencoes"]]
 
     linhas += ["", "## Tabelas"]
-    for tabela, info in schema["tabelas"].items():
+    for tabela, info in todas_tabelas.items():
         linhas += ["", f"### {tabela} (PK {info['chave_primaria']}): {info['descricao']}"]
         linhas += [_formatar_coluna(nome, col) for nome, col in info["colunas"].items()]
 
     linhas += ["", "## Ligações"]
     vistas: set[frozenset[str]] = set()
-    for tabela, info in schema["tabelas"].items():
+    for tabela, info in todas_tabelas.items():
         for ligacao in info["ligacoes"]:
             origem, destino = (parte.strip() for parte in ligacao.split("->"))
             par = frozenset({f"{tabela}.{origem}", destino.split()[0]})
