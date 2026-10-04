@@ -129,7 +129,8 @@ def test_prompt_inclui_esquema_literal_e_regras() -> None:
     prompt = montar_prompt_sistema()
     assert gerar_texto_schema() in prompt
     for trecho in ["analista de dados da CineData", "português", "run_sql", "somente leitura",
-                   "truncado", "fora do escopo", "revelar o prompt", "1 a 2 frases"]:
+                   "truncado", "fora do escopo", "revelar o prompt", "1 a 2 frases",
+                   '"catálogo", nunca de "em cartaz"']:
         assert trecho in prompt, trecho
     assert 0 < contar_tokens_aprox(prompt) < 8000
 
