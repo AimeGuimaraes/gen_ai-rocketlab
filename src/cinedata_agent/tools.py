@@ -25,9 +25,7 @@ def _info_tabela(table_name: str) -> dict[str, Any]:
     """Devolve a entrada da tabela no esquema ou levanta ErroConsulta com as opções válidas."""
     tabelas = _tabelas()
     if table_name not in tabelas:
-        raise ErroConsulta(
-            f"Tabela '{table_name}' não existe. Tabelas disponíveis: {', '.join(tabelas)}."
-        )
+        raise ErroConsulta(f"Tabela '{table_name}' não existe. Tabelas disponíveis: {', '.join(tabelas)}.")
     return tabelas[table_name]
 
 
@@ -76,8 +74,7 @@ def sample_values(table_name: str, column_name: str) -> dict[str, Any]:
     info = _info_tabela(table_name)
     if column_name not in info["colunas"]:
         raise ErroConsulta(
-            f"Coluna '{column_name}' não existe em {table_name}. "
-            f"Colunas disponíveis: {', '.join(info['colunas'])}."
+            f"Coluna '{column_name}' não existe em {table_name}. Colunas disponíveis: {', '.join(info['colunas'])}."
         )
     # Seguro: tabela e coluna foram conferidas contra o esquema acima (lista branca).
     sql = (

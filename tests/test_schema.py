@@ -12,8 +12,16 @@ from cinedata_agent.schema import (
 )
 
 TABELAS = {
-    "dim_movies", "fact_movies_performance", "dim_genres", "dim_people", "dim_companies",
-    "dim_reviews", "movie_reviews", "bridge_movie_genre", "bridge_movie_person", "bridge_movie_company",
+    "dim_movies",
+    "fact_movies_performance",
+    "dim_genres",
+    "dim_people",
+    "dim_companies",
+    "dim_reviews",
+    "movie_reviews",
+    "bridge_movie_genre",
+    "bridge_movie_person",
+    "bridge_movie_company",
 }
 CAMINHO_DB = RAIZ_PROJETO / "cinerocket.db"
 

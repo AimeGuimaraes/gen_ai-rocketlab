@@ -97,6 +97,7 @@ def _esperado(id_pergunta: str) -> list[list]:
 
 # --- Validação (não precisa do banco) ---
 
+
 @pytest.mark.parametrize(
     "sql",
     [
@@ -176,6 +177,7 @@ def test_falso_positivo_passa_na_validacao(sql: str) -> None:
 
 
 # --- Execução (precisa do banco) ---
+
 
 @precisa_db
 @pytest.mark.parametrize("sql", FALSOS_POSITIVOS, ids=IDS_FALSOS_POSITIVOS)

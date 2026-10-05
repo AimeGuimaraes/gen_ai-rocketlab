@@ -48,9 +48,7 @@ def gerar_texto_schema(caminho: Path | None = None) -> str:
                 linhas.append(f"- {tabela}.{ligacao}")
 
     linhas += ["", "## Regras de negócio"]
-    linhas += [
-        f"- {regra['id']} {regra['titulo']}: {regra['regra']}" for regra in schema["regras_de_negocio"]
-    ]
+    linhas += [f"- {regra['id']} {regra['titulo']}: {regra['regra']}" for regra in schema["regras_de_negocio"]]
     return "\n".join(linhas)
 
 

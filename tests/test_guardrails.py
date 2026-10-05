@@ -28,6 +28,7 @@ PERGUNTAS_NORMAIS = [p for p in GOLDEN.values() if p["tipo_checagem"] != "recusa
 
 # --- Golden set ---
 
+
 @pytest.mark.parametrize(("id_pergunta", "motivo"), [("q19", "alteracao"), ("q20", "injecao")])
 def test_recusas_do_golden_set(id_pergunta: str, motivo: str) -> None:
     recusa = verificar_pergunta(GOLDEN[id_pergunta]["pergunta"])
@@ -45,6 +46,7 @@ def test_perguntas_do_golden_set_passam(item: dict) -> None:
 
 
 # --- Falsos positivos (não podem ser recusados) ---
+
 
 @pytest.mark.parametrize(
     "pergunta",
@@ -67,6 +69,7 @@ def test_falsos_positivos(pergunta: str) -> None:
 
 
 # --- Recusas ---
+
 
 @pytest.mark.parametrize(
     "pergunta",
@@ -127,6 +130,7 @@ def test_normalizar_texto() -> None:
 
 
 # --- Integração com o ask() ---
+
 
 def test_ask_recusa_sem_chamar_o_modelo(monkeypatch: pytest.MonkeyPatch) -> None:
     chamadas: list[str] = []

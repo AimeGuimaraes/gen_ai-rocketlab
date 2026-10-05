@@ -19,7 +19,7 @@ MotivoRecusa = Literal["vazia", "longa", "alteracao", "injecao"]
 MENSAGEM_VAZIA = "Escreva uma pergunta sobre o catálogo de filmes da CineData."
 MENSAGEM_ALTERACAO = (
     "Não posso alterar dados: o CineData Agent tem acesso somente leitura ao catálogo de filmes. "
-    "Posso ajudar com consultas, por exemplo: \"Quais são os 10 filmes com maior receita?\"."
+    'Posso ajudar com consultas, por exemplo: "Quais são os 10 filmes com maior receita?".'
 )
 MENSAGEM_INJECAO = (
     "Não posso mudar minhas instruções, trocar de papel nem revelar como fui configurado. "
@@ -112,8 +112,7 @@ def _verificar(pergunta: str) -> Recusa | None:
     if len(texto) > MAX_CARACTERES:
         return Recusa(
             "longa",
-            f"A pergunta tem {len(texto)} caracteres e o limite é {MAX_CARACTERES}. "
-            "Tente resumi-la.",
+            f"A pergunta tem {len(texto)} caracteres e o limite é {MAX_CARACTERES}. Tente resumi-la.",
         )
     normalizado = normalizar_texto(texto)
     if any(regex.search(normalizado) for regex in _REGEX_INJECAO):

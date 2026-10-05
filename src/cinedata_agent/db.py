@@ -24,8 +24,16 @@ INSTRUCOES_POR_CHECAGEM = 10_000  # frequência do progress handler (instruçõe
 
 # Comandos que nunca podem aparecer na árvore do SQL (REPLACE e VACUUM viram exp.Command).
 NOS_PROIBIDOS: tuple[type[exp.Expression], ...] = (
-    exp.Insert, exp.Update, exp.Delete, exp.Drop, exp.Alter, exp.Create,
-    exp.Attach, exp.Detach, exp.Pragma, exp.Command,
+    exp.Insert,
+    exp.Update,
+    exp.Delete,
+    exp.Drop,
+    exp.Alter,
+    exp.Create,
+    exp.Attach,
+    exp.Detach,
+    exp.Pragma,
+    exp.Command,
 )
 
 SQL_CRIAR_AUX = """
@@ -43,9 +51,7 @@ JOIN dim_movies m ON m.sk_movie_id = bp.sk_movie_id
 JOIN dim_people p ON p.sk_person_id = bp.sk_person_id
 ORDER BY p.tipo_pessoa, m.rowid, p.rowid
 """
-SQL_INDICE_AUX = (
-    "CREATE INDEX ix_aux_vinculo_papel ON aux_vinculo_papel (tipo_pessoa, id_mov, id_pes)"
-)
+SQL_INDICE_AUX = "CREATE INDEX ix_aux_vinculo_papel ON aux_vinculo_papel (tipo_pessoa, id_mov, id_pes)"
 
 
 class ResultadoConsulta(BaseModel):
@@ -135,7 +141,9 @@ def inicializar_banco(db_path: Path | None = None) -> EstatisticasBanco:
         _conexao = conexao
         logger.info(
             "Banco em memória pronto em %.2f s (+%.0f MB, aux_vinculo_papel com %d linhas).",
-            _estatisticas.tempo_inicializacao_s, _estatisticas.memoria_mb, linhas_aux,
+            _estatisticas.tempo_inicializacao_s,
+            _estatisticas.memoria_mb,
+            linhas_aux,
         )
         return _estatisticas
 

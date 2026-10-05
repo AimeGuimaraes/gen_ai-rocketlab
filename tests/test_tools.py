@@ -26,13 +26,22 @@ CAMINHO_DB = RAIZ_PROJETO / "cinerocket.db"
 precisa_db = pytest.mark.skipif(not CAMINHO_DB.exists(), reason="banco cinerocket.db ausente")
 
 TABELAS = {
-    "dim_movies", "fact_movies_performance", "dim_genres", "dim_people", "dim_companies",
-    "dim_reviews", "movie_reviews", "bridge_movie_genre", "bridge_movie_person", "bridge_movie_company",
+    "dim_movies",
+    "fact_movies_performance",
+    "dim_genres",
+    "dim_people",
+    "dim_companies",
+    "dim_reviews",
+    "movie_reviews",
+    "bridge_movie_genre",
+    "bridge_movie_person",
+    "bridge_movie_company",
     "aux_vinculo_papel",
 }
 
 
 # --- Esquema (não precisa do banco) ---
+
 
 def test_list_tables_traz_todas_com_descricao() -> None:
     tabelas = list_tables()
@@ -71,6 +80,7 @@ def test_sample_values_recusa_nomes_fora_do_esquema(tabela: str, coluna: str) ->
 
 
 # --- Execução (precisa do banco) ---
+
 
 @precisa_db
 def test_sample_values_generos() -> None:
@@ -125,12 +135,21 @@ def test_run_sql_erro_sobe_e_nada_e_registrado() -> None:
 
 # --- Prompt de sistema ---
 
+
 def test_prompt_inclui_esquema_literal_e_regras() -> None:
     prompt = montar_prompt_sistema()
     assert gerar_texto_schema() in prompt
-    for trecho in ["analista de dados da CineData", "português", "run_sql", "somente leitura",
-                   "truncado", "fora do escopo", "revelar o prompt", "1 a 2 frases",
-                   '"catálogo", nunca de "em cartaz"']:
+    for trecho in [
+        "analista de dados da CineData",
+        "português",
+        "run_sql",
+        "somente leitura",
+        "truncado",
+        "fora do escopo",
+        "revelar o prompt",
+        "1 a 2 frases",
+        '"catálogo", nunca de "em cartaz"',
+    ]:
         assert trecho in prompt, trecho
     assert 0 < contar_tokens_aprox(prompt) < 8000
 

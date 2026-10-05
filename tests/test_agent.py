@@ -97,6 +97,7 @@ def partes_retry(mensagens: list[ModelMessage]) -> list[RetryPromptPart]:
 
 # --- Fluxo do agente ---
 
+
 @precisa_db
 def test_ask_devolve_resposta_sql_e_resultado_completo() -> None:
     modelo = roteiro(chamar_sql(SQL_100_TITULOS), texto("Aqui estão os títulos."))
@@ -165,6 +166,7 @@ def test_ferramentas_registradas() -> None:
 
 # --- Erros do modelo e cota ---
 
+
 @pytest.mark.parametrize(
     ("status", "corpo", "esperado"),
     [
@@ -178,8 +180,17 @@ def test_ferramentas_registradas() -> None:
         (500, None, "outro"),
         (502, {"message": "Bad gateway"}, "outro"),
     ],
-    ids=["429_upstream", "429_upstream_texto", "404", "429_cota", "502_provedor", "503_provedor", "400", "500",
-         "502_sem_provedor"],
+    ids=[
+        "429_upstream",
+        "429_upstream_texto",
+        "404",
+        "429_cota",
+        "502_provedor",
+        "503_provedor",
+        "400",
+        "500",
+        "502_sem_provedor",
+    ],
 )
 def test_classificar_erro(status: int, corpo: object, esperado: str) -> None:
     assert classificar_erro(ModelHTTPError(status, "m", corpo)) == esperado
@@ -235,6 +246,7 @@ def test_todos_os_modelos_indisponiveis(sem_banco: None) -> None:
 
 # --- CLI ---
 
+
 def resposta_falsa(
     pergunta: str, historico: list[ModelMessage] | None = None, usar_cache: bool = True
 ) -> RespostaAgente:
@@ -279,9 +291,7 @@ def test_cli_interativo_com_memoria(monkeypatch: pytest.MonkeyPatch, capsys: pyt
 
 
 def test_cli_cota_esgotada(monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
-    def sem_cota(
-        pergunta: str, historico: list[ModelMessage] | None = None, usar_cache: bool = True
-    ) -> RespostaAgente:
+    def sem_cota(pergunta: str, historico: list[ModelMessage] | None = None, usar_cache: bool = True) -> RespostaAgente:
         raise QuotaExceededError()
 
     monkeypatch.setattr(cli, "ask", sem_cota)
@@ -308,8 +318,15 @@ def test_cli_rodape_de_cache_e_de_recusa() -> None:
     do_cache = resposta_falsa("x").model_copy(update={"cache": True, "requisicoes": 0})
     assert "Requisições: 0 (resposta do cache)" in cli.formatar_resposta(do_cache)
     recusada = RespostaAgente(
-        resposta="Não posso alterar dados.", sql_executados=[], colunas=[], linhas=[],
-        modelo=None, requisicoes=0, tempo_ms=0, historico=[], recusada=True,
+        resposta="Não posso alterar dados.",
+        sql_executados=[],
+        colunas=[],
+        linhas=[],
+        modelo=None,
+        requisicoes=0,
+        tempo_ms=0,
+        historico=[],
+        recusada=True,
     )
     texto_recusa = cli.formatar_resposta(recusada)
     assert "recusada antes de chamar o modelo" in texto_recusa

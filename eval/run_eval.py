@@ -84,6 +84,7 @@ class Estimativa:
 
 # --- Seleção das perguntas ---
 
+
 def parse_ids(texto: str) -> list[str]:
     """Converte "q01,q02", "q01-q07" ou combinações ("q01-q03,q09") em ids, sem repetir."""
     ids: list[str] = []
@@ -115,6 +116,7 @@ def selecionar(golden: list[dict[str, Any]], ids: list[str] | None) -> list[dict
 
 
 # --- Comparador ---
+
 
 def _chaves_item(item: dict[str, Any]) -> list[str]:
     """Coluna(s) da chave do item, sempre como lista."""
@@ -276,7 +278,9 @@ def comparar(
             partes.append(f"faltam {_formatar_chaves(faltam, originais)}")
         if sobram := contagem_obt - contagem_esp:
             partes.append(f"sobram {_formatar_chaves(sobram, originais)}")
-        return False, f"linhas diferentes ({len(chaves_obt)} obtidas, {len(chaves_esp)} esperadas): " + "; ".join(partes)
+        return False, f"linhas diferentes ({len(chaves_obt)} obtidas, {len(chaves_esp)} esperadas): " + "; ".join(
+            partes
+        )
 
     usadas = set(mapa.values())
     opcionais = COLUNAS_OPCIONAIS | colunas_so_filtro(item.get("sql_esperado", ""))
@@ -327,6 +331,7 @@ def colunas_so_filtro(sql: str) -> set[str]:
 
 # --- Estimativa e cota ---
 
+
 def estimar(item: dict[str, Any], modelo: Model, usar_cache: bool = True) -> Estimativa:
     """Prevê as requisições de uma pergunta sem chamar o modelo (guardrails e cache custam 0)."""
     if verificar_pergunta(item["pergunta"]) is not None:
@@ -358,6 +363,7 @@ def cota_restante() -> int | None:
 
 # --- Execução ---
 
+
 def avaliar_pergunta(item: dict[str, Any], modelo: Model, usar_cache: bool = True) -> dict[str, Any]:
     """Pergunta ao agente, reexecuta o último SQL e compara com o esperado; devolve o registro.
 
@@ -383,10 +389,19 @@ def avaliar_pergunta(item: dict[str, Any], modelo: Model, usar_cache: bool = Tru
         # Estourar o limite significa ter gasto todas as requisições; nos outros erros o gasto é desconhecido.
         gastas = MAX_REQUISICOES if isinstance(erro.__cause__, UsageLimitExceeded) else None
         return registro | {
-            "acertou": False, "detalhe": f"erro do agente: {erro}", "erro": str(erro),
-            "resposta": None, "sql_gerado": None, "sql_executados": [], "colunas": [], "linhas": [],
-            "modelo": None, "requisicoes": gastas, "tempo_ms": round((time.perf_counter() - inicio) * 1000),
-            "cache": False, "recusada": False,
+            "acertou": False,
+            "detalhe": f"erro do agente: {erro}",
+            "erro": str(erro),
+            "resposta": None,
+            "sql_gerado": None,
+            "sql_executados": [],
+            "colunas": [],
+            "linhas": [],
+            "modelo": None,
+            "requisicoes": gastas,
+            "tempo_ms": round((time.perf_counter() - inicio) * 1000),
+            "cache": False,
+            "recusada": False,
         }
 
     requisicoes, tempo_ms = resposta.requisicoes, resposta.tempo_ms
@@ -474,6 +489,7 @@ def rodar(
 
 # --- Relatório ---
 
+
 def _pct(acertos: int, total: int) -> str:
     """Percentual com vírgula (ex.: 85,0%)."""
     return f"{acertos / total * 100:.1f}%".replace(".", ",") if total else "-"
@@ -528,8 +544,7 @@ def gerar_relatorio(registros: dict[str, dict[str, Any]], golden: list[dict[str,
             f"{_decimal(sum(com_modelo) / len(com_modelo)) if com_modelo else '-'} "
             f"entre as {len(com_modelo)} que chamaram o modelo."
         ),
-        "- **Modelos usados:** "
-        + (", ".join(f"`{m}` ({n})" for m, n in modelos.most_common()) if modelos else "-"),
+        "- **Modelos usados:** " + (", ".join(f"`{m}` ({n})" for m, n in modelos.most_common()) if modelos else "-"),
     ]
     if pendentes:
         linhas.append(f"- **Ainda não avaliadas:** {', '.join(pendentes)}.")
@@ -539,7 +554,9 @@ def gerar_relatorio(registros: dict[str, dict[str, Any]], golden: list[dict[str,
     for r in contam:
         por_categoria[r["categoria"]].append(r["acertou"])
     for categoria, resultados in por_categoria.items():
-        linhas.append(f"| {categoria} | {sum(resultados)} | {len(resultados)} | {_pct(sum(resultados), len(resultados))} |")
+        linhas.append(
+            f"| {categoria} | {sum(resultados)} | {len(resultados)} | {_pct(sum(resultados), len(resultados))} |"
+        )
     linhas.append(f"| **Total** | **{acertos}** | **{len(contam)}** | **{_pct(acertos, len(contam))}** |")
 
     linhas += [
@@ -586,6 +603,7 @@ def escrever_relatorio(golden: list[dict[str, Any]], pasta: Path | None = None, 
 
 
 # --- CLI ---
+
 
 def _legivel(caminho: Path) -> str:
     """Caminho relativo à raiz do projeto, quando possível."""

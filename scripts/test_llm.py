@@ -9,14 +9,16 @@ load_dotenv()
 modelo = sys.argv[1] if len(sys.argv) > 1 else os.getenv("LLM_MODEL")
 client = OpenAI(base_url=os.getenv("LLM_BASE_URL"), api_key=os.getenv("LLM_API_KEY"))
 
-tools = [{
-    "type": "function",
-    "function": {
-        "name": "contar_filmes",
-        "description": "Retorna a quantidade total de filmes no catálogo.",
-        "parameters": {"type": "object", "properties": {}, "required": []},
-    },
-}]
+tools = [
+    {
+        "type": "function",
+        "function": {
+            "name": "contar_filmes",
+            "description": "Retorna a quantidade total de filmes no catálogo.",
+            "parameters": {"type": "object", "properties": {}, "required": []},
+        },
+    }
+]
 
 print(f"Testando: {modelo}")
 try:

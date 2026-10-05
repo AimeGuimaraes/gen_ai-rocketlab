@@ -80,9 +80,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("pergunta", nargs="*", help="pergunta (sem ela, abre o modo interativo)")
     parser.add_argument("-v", "--verbose", action="store_true", help="mostra os passos do agente (logging)")
-    parser.add_argument(
-        "--no-cache", action="store_true", help="ignora o cache e sempre chama o modelo (gasta cota)"
-    )
+    parser.add_argument("--no-cache", action="store_true", help="ignora o cache e sempre chama o modelo (gasta cota)")
     args = parser.parse_args(argv)
     logging.basicConfig(
         level=logging.INFO if args.verbose else logging.WARNING,

@@ -20,7 +20,10 @@ from cinedata_agent.db import EstatisticasBanco
 def config_falsa(api_key: str = "chave-teste") -> Config:
     """Configuração de teste, sem ler o .env."""
     return Config(
-        base_url="https://openrouter.teste/api/v1", api_key=api_key, modelo="m", modelos_fallback=(),
+        base_url="https://openrouter.teste/api/v1",
+        api_key=api_key,
+        modelo="m",
+        modelos_fallback=(),
         db_path=Path("cinerocket.db"),
     )
 
@@ -69,6 +72,7 @@ def usar_agente(monkeypatch: pytest.MonkeyPatch, erro: Exception | None = None) 
 
 
 # --- /ask ---
+
 
 def test_ask_devolve_todos_os_campos(cliente: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
     agente = usar_agente(monkeypatch)
@@ -160,9 +164,12 @@ def test_erro_nao_guarda_historico_da_sessao(cliente: TestClient, monkeypatch: p
 
 # --- /health ---
 
+
 def test_health_ok(cliente: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(db, "obter_conexao", lambda: sqlite3.connect(":memory:"))
-    monkeypatch.setattr(db, "estatisticas", lambda: EstatisticasBanco(tempo_inicializacao_s=1.5, memoria_mb=300, linhas_aux=10))
+    monkeypatch.setattr(
+        db, "estatisticas", lambda: EstatisticasBanco(tempo_inicializacao_s=1.5, memoria_mb=300, linhas_aux=10)
+    )
     resposta = cliente.get("/health")
     assert resposta.status_code == 200
     corpo = resposta.json()
@@ -185,6 +192,7 @@ def test_health_sem_banco_e_sem_chave(cliente: TestClient, monkeypatch: pytest.M
 
 # --- /schema ---
 
+
 def test_schema_lista_as_tabelas(cliente: TestClient) -> None:
     resposta = cliente.get("/schema")
     assert resposta.status_code == 200
@@ -197,6 +205,7 @@ def test_schema_lista_as_tabelas(cliente: TestClient) -> None:
 
 
 # --- /quota ---
+
 
 def test_quota(cliente: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(api, "consultar_cota", lambda: {"used": 50, "limit": 50, "remaining": 0})

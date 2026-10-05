@@ -46,6 +46,7 @@ def linhas_no_cache() -> int:
 
 # --- Chave ---
 
+
 def test_chave_ignora_caixa_acentos_e_espacos() -> None:
     base = cache.chave_cache(PERGUNTA, "m", "prompt")
     assert cache.chave_cache("  quantos FILMES   existem por genero? ", "m", "prompt") == base
@@ -59,6 +60,7 @@ def test_chave_muda_com_modelo_prompt_e_pergunta() -> None:
 
 
 # --- Armazenamento ---
+
 
 def test_salvar_e_buscar(cache_temporario: Path) -> None:
     assert cache.buscar("k") is None
@@ -78,6 +80,7 @@ def test_cache_corrompido_nao_quebra_o_agente(cache_temporario: Path) -> None:
 
 
 # --- Integração com o ask() ---
+
 
 def test_segunda_pergunta_vem_do_cache() -> None:
     chamadas: list[str] = []

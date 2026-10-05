@@ -34,6 +34,7 @@ MENSAGEM_ERRO_INTERNO = "Erro interno ao processar a pergunta. Tente de novo mai
 
 # --- Memória das conversas ---
 
+
 class MemoriaConversas:
     """Histórico de mensagens por session_id, em memória, com limite de sessões."""
 
@@ -57,6 +58,7 @@ class MemoriaConversas:
 
 
 # --- Modelos de entrada e saída ---
+
 
 class PerguntaEntrada(BaseModel):
     """Pergunta em português sobre o catálogo de filmes."""
@@ -89,9 +91,12 @@ class RespostaSaida(BaseModel):
     )
     colunas: list[str] = Field(description="Colunas do resultado.", examples=[["titulo", "receita_brl"]])
     linhas: list[dict[str, Any]] = Field(
-        description="Linhas do resultado.", examples=[[{"titulo": "Avatar: The Way Of Water (2022)", "receita_brl": 1.2e10}]]
+        description="Linhas do resultado.",
+        examples=[[{"titulo": "Avatar: The Way Of Water (2022)", "receita_brl": 1.2e10}]],
     )
-    modelo: str | None = Field(description="Modelo que respondeu (None em recusas).", examples=["nvidia/nemotron-3.5-lightning:free"])
+    modelo: str | None = Field(
+        description="Modelo que respondeu (None em recusas).", examples=["nvidia/nemotron-3.5-lightning:free"]
+    )
     requisicoes: int = Field(description="Requisições gastas no OpenRouter (0 em cache e recusas).", examples=[2])
     tempo_ms: int = Field(description="Tempo de resposta em milissegundos.", examples=[3500])
     cache: bool = Field(description="True se a resposta veio do cache.", examples=[False])
@@ -141,6 +146,7 @@ class CotaSaida(BaseModel):
 
 
 # --- Aplicação ---
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:

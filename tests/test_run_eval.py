@@ -47,6 +47,7 @@ def comparar(item: dict[str, Any], colunas: list[str], linhas: list[list[Any]], 
 
 # --- resultado_exato ---
 
+
 def test_exato_com_colunas_renomeadas_e_em_outra_ordem() -> None:
     acertou, detalhe = comparar(
         ITEM_EXATO,
@@ -147,6 +148,7 @@ def test_coluna_so_de_filtro_ausente_nao_reprova() -> None:
 
 # --- top_n_contem ---
 
+
 def test_top_n_contem() -> None:
     assert comparar(ITEM_TOP, ["filme"], [["Filme B"], ["Filme X"], ["Filme A"]])[0]
     acertou, detalhe = comparar(ITEM_TOP, ["filme"], [["Filme A"], ["Filme C"]])
@@ -164,6 +166,7 @@ def test_top_n_com_chave_composta() -> None:
 
 # --- recusa e casos sem SQL ---
 
+
 def test_recusa() -> None:
     assert run_eval.comparar(ITEM_RECUSA, None, [], [], [], recusada=True)[0]
     assert run_eval.comparar(ITEM_RECUSA, None, [], [], [])[0]  # sem SQL também é recusa
@@ -177,6 +180,7 @@ def test_pergunta_normal_sem_sql_ou_sem_linhas_erra() -> None:
 
 
 # --- --ids ---
+
 
 @pytest.mark.parametrize(
     ("texto", "esperado"),
@@ -204,12 +208,31 @@ def test_selecionar_ids_fora_do_golden() -> None:
 # --- Fluxo (ask falso, sem modelo nem banco) ---
 
 GOLDEN_FALSO = [
-    {"id": "q01", "categoria": "financas", "pergunta": "Top filmes?", "sql_esperado": "SELECT 1",
-     "tipo_checagem": "top_n_contem", "chave": "titulo", "top_n": 1},
-    {"id": "q02", "categoria": "financas", "pergunta": "Outra pergunta?", "sql_esperado": "SELECT 2",
-     "tipo_checagem": "top_n_contem", "chave": "titulo", "top_n": 1},
-    {"id": "q03", "categoria": "fora_escopo", "pergunta": "Previsão do tempo?", "sql_esperado": "",
-     "tipo_checagem": "recusa"},
+    {
+        "id": "q01",
+        "categoria": "financas",
+        "pergunta": "Top filmes?",
+        "sql_esperado": "SELECT 1",
+        "tipo_checagem": "top_n_contem",
+        "chave": "titulo",
+        "top_n": 1,
+    },
+    {
+        "id": "q02",
+        "categoria": "financas",
+        "pergunta": "Outra pergunta?",
+        "sql_esperado": "SELECT 2",
+        "tipo_checagem": "top_n_contem",
+        "chave": "titulo",
+        "top_n": 1,
+    },
+    {
+        "id": "q03",
+        "categoria": "fora_escopo",
+        "pergunta": "Previsão do tempo?",
+        "sql_esperado": "",
+        "tipo_checagem": "recusa",
+    },
 ]
 MODELO_FALSO = FunctionModel(lambda m, i: ModelResponse(parts=[TextPart("x")]), model_name="modelo-teste")
 
@@ -217,9 +240,14 @@ MODELO_FALSO = FunctionModel(lambda m, i: ModelResponse(parts=[TextPart("x")]), 
 def resposta_falsa(sql: str | None = "SELECT titulo FROM t", requisicoes: int = 2) -> RespostaAgente:
     """Resposta do agente com um SQL e o Filme A no resultado."""
     return RespostaAgente(
-        resposta="ok", sql_executados=[sql] if sql else [], colunas=["titulo"] if sql else [],
-        linhas=[{"titulo": "Filme A"}] if sql else [], modelo="modelo-teste",
-        requisicoes=requisicoes, tempo_ms=1500, historico=[],
+        resposta="ok",
+        sql_executados=[sql] if sql else [],
+        colunas=["titulo"] if sql else [],
+        linhas=[{"titulo": "Filme A"}] if sql else [],
+        modelo="modelo-teste",
+        requisicoes=requisicoes,
+        tempo_ms=1500,
+        historico=[],
     )
 
 
@@ -242,9 +270,7 @@ def ambiente(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> dict[str, Any]:
     monkeypatch.setattr(run_eval, "cota_restante", lambda: estado["cota"])
     monkeypatch.setattr(run_eval, "PASTA_RESULTADOS", tmp_path / "resultados")
     monkeypatch.setattr(run_eval, "CAMINHO_RELATORIO", tmp_path / "report.md")
-    monkeypatch.setattr(
-        run_eval, "_carregar_esperado", lambda _id: {"colunas": ["titulo"], "linhas": [["Filme A"]]}
-    )
+    monkeypatch.setattr(run_eval, "_carregar_esperado", lambda _id: {"colunas": ["titulo"], "linhas": [["Filme A"]]})
     return estado
 
 
@@ -332,8 +358,9 @@ def test_para_quando_resta_pouca_cota_mas_nao_aborta_antes(
     assert ambiente["chamadas"] == ["Top filmes?"]
 
 
-def test_dry_run_nao_chama_o_agente(ambiente: dict[str, Any], monkeypatch: pytest.MonkeyPatch,
-                                    capsys: pytest.CaptureFixture[str]) -> None:
+def test_dry_run_nao_chama_o_agente(
+    ambiente: dict[str, Any], monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
     monkeypatch.setattr(run_eval, "_modelo_padrao", lambda: MODELO_FALSO)
     assert run_eval.main(["--dry-run"]) == 0
     saida = capsys.readouterr().out
@@ -344,7 +371,9 @@ def test_dry_run_nao_chama_o_agente(ambiente: dict[str, Any], monkeypatch: pytes
 
 def test_relatorio_mostra_sql_gerado_e_esperado_nas_erradas(ambiente: dict[str, Any]) -> None:
     registro = run_eval.avaliar_pergunta(GOLDEN_FALSO[0], MODELO_FALSO) | {
-        "acertou": False, "detalhe": "faltam X", "sql_gerado": "SELECT a < b",
+        "acertou": False,
+        "detalhe": "faltam X",
+        "sql_gerado": "SELECT a < b",
     }
     texto = run_eval.gerar_relatorio({"q01": registro}, GOLDEN_FALSO)
     assert "### q01" in texto and "SELECT a &lt; b" in texto and "SELECT 1" in texto
@@ -353,15 +382,25 @@ def test_relatorio_mostra_sql_gerado_e_esperado_nas_erradas(ambiente: dict[str, 
 
 # --- Integração com o agente de verdade e modelo falso (precisa do banco) ---
 
+
 @precisa_db
 def test_avaliar_pergunta_com_function_model() -> None:
-    respostas = iter([
-        ModelResponse(parts=[ToolCallPart("run_sql", {"sql": "SELECT nome_genero FROM dim_genres"})]),
-        ModelResponse(parts=[TextPart("São 19 gêneros.")]),
-    ])
+    respostas = iter(
+        [
+            ModelResponse(parts=[ToolCallPart("run_sql", {"sql": "SELECT nome_genero FROM dim_genres"})]),
+            ModelResponse(parts=[TextPart("São 19 gêneros.")]),
+        ]
+    )
     modelo = FunctionModel(lambda m, i: next(respostas), model_name="modelo-teste")
-    item = {"id": "q10", "categoria": "generos_produtoras", "pergunta": "Quais gêneros existem?",
-            "sql_esperado": "SELECT 1", "tipo_checagem": "top_n_contem", "chave": "nome_genero", "top_n": 3}
+    item = {
+        "id": "q10",
+        "categoria": "generos_produtoras",
+        "pergunta": "Quais gêneros existem?",
+        "sql_esperado": "SELECT 1",
+        "tipo_checagem": "top_n_contem",
+        "chave": "nome_genero",
+        "top_n": 3,
+    }
     registro = run_eval.avaliar_pergunta(item, modelo)
     assert registro["acertou"], registro["detalhe"]  # os 3 gêneros mais frequentes estão entre os 19
     assert registro["requisicoes"] == 2 and registro["modelo"] == "modelo-teste"

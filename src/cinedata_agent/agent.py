@@ -82,6 +82,7 @@ class RespostaAgente(BaseModel):
 
 # --- Modelos e tratamento de erros ---
 
+
 def classificar_erro(erro: Exception) -> Literal["trocar", "cota", "outro"]:
     """Classifica o erro do modelo segundo o guia do Rocket Lab.
 
@@ -136,6 +137,7 @@ def _modelo_padrao() -> Model:
 
 # --- Agente e ferramentas ---
 
+
 def _executar(nome: str, funcao: Any, *args: Any, **kwargs: Any) -> Any:
     """Executa uma ferramenta com log; ErroConsulta vira ModelRetry para o modelo se corrigir."""
     inicio = time.perf_counter()
@@ -178,6 +180,7 @@ def criar_agente() -> Agent[DepsAgente, str]:
 
 
 # --- Perguntas ---
+
 
 def _erro_cota(erro: Exception) -> bool:
     """Diz se o erro (ou algum erro dentro do grupo do fallback) é de cota esgotada."""
@@ -281,7 +284,11 @@ async def ask_async(
     )
     logger.info(
         "Resposta pelo modelo %s: %d requisições (%d falhas de modelo), %d SQL, %d ms.",
-        resposta.modelo, resposta.requisicoes, len(falhas), len(resposta.sql_executados), tempo_ms,
+        resposta.modelo,
+        resposta.requisicoes,
+        len(falhas),
+        len(resposta.sql_executados),
+        tempo_ms,
     )
     if com_cache:  # só respostas bem-sucedidas chegam aqui; erros saíram por exceção
         cache.salvar(chave, pergunta, modelo.model_name, resposta.model_dump_json())

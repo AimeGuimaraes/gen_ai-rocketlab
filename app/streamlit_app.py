@@ -37,6 +37,7 @@ MENSAGEM_ERRO = "Algo deu errado ao responder. Tente de novo em instantes."
 
 # --- Recursos compartilhados ---
 
+
 @st.cache_resource
 def _preparar_banco() -> None:
     """Carrega o banco em memória uma vez por processo."""
@@ -60,6 +61,7 @@ def _consultar_cota() -> dict[str, Any] | None:
 
 
 # --- Estado da conversa ---
+
 
 def _iniciar_estado() -> None:
     """Cria as chaves do st.session_state na primeira execução."""
@@ -113,6 +115,7 @@ def _detalhes(resposta: agent.RespostaAgente) -> str:
 
 
 # --- Exibição ---
+
 
 def _mostrar(mensagem: dict[str, Any], indice: int) -> None:
     """Desenha uma mensagem do chat: texto, tabela, gráfico e SQL."""
