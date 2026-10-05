@@ -12,7 +12,7 @@ import psutil
 import sqlglot
 from pydantic import BaseModel
 from sqlglot import exp
-from sqlglot.errors import ParseError
+from sqlglot.errors import SqlglotError
 
 from cinedata_agent.config import carregar_config
 
@@ -158,7 +158,7 @@ def validate_sql(sql: str) -> exp.Expression:
         raise ErroValidacao("A consulta está vazia. Envie um comando SELECT.")
     try:
         comandos = [c for c in sqlglot.parse(sql, read="sqlite") if c is not None]
-    except ParseError as erro:
+    except SqlglotError as erro:  # ParseError e TokenError (ex.: aspas sem fechar em 'Anoa'i')
         raise ErroValidacao(f"Erro de sintaxe no SQL: {erro}") from erro
     if not comandos:
         raise ErroValidacao("A consulta está vazia. Envie um comando SELECT.")

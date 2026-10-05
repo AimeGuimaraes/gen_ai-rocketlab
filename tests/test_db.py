@@ -154,6 +154,12 @@ def test_sintaxe_invalida_recusada() -> None:
         validate_sql("SELECT FROM WHERE")
 
 
+def test_aspas_sem_fechar_viram_erro_de_validacao() -> None:
+    # Caso real da avaliação (q09): o TokenError do sqlglot derrubava o agente em vez de voltar ao modelo.
+    with pytest.raises(ErroValidacao, match="sintaxe"):
+        validate_sql("SELECT sk_person_id FROM dim_people WHERE nome_pessoa = 'Joe Anoa'i'")
+
+
 # Falsos positivos: palavras perigosas fora de comandos não podem ser bloqueadas.
 FALSOS_POSITIVOS = [
     "SELECT REPLACE(titulo, 'a', 'b') FROM dim_movies",
