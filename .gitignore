@@ -222,3 +222,4 @@ __marimo__/
 *.db-shm
 *.db-wal
 .cache/
+eval/resultados/
