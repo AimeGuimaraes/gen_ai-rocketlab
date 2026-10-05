@@ -17,9 +17,12 @@ dependencies = [
     "pandas",
 ]
 
+[project.optional-dependencies]
+api = ["fastapi", "uvicorn"]
+
 [tool.setuptools.packages.find]
 where = ["src"]
 
 [tool.pytest.ini_options]
-pythonpath = ["src"]
+pythonpath = ["src", "."]
 testpaths = ["tests"]
