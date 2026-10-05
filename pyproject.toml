@@ -19,6 +19,7 @@ dependencies = [
 
 [project.optional-dependencies]
 api = ["fastapi", "uvicorn"]
+app = ["streamlit", "plotly"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
