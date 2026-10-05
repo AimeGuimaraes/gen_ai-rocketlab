@@ -84,6 +84,10 @@ O navegador abre sozinho em **http://localhost:8501**. Na primeira pergunta o ap
 
 ![Interface do CineData Agent](docs/interface.png)
 
+![Gráfico automático da quantidade de filmes por ano](docs/interface_grafico.png)
+
+*Gráfico de linha gerado automaticamente (ano + número), sem chamar o modelo.*
+
 - **Chat**: digite a pergunta no campo de baixo. Cada resposta mostra o texto, a tabela e o SQL executado (em "SQL executado"). A conversa tem memória, então dá para perguntar "E só os de terror?" logo em seguida.
 - **Gráfico automático** (sem chamar o modelo), quando o resultado tem de 3 a 30 linhas: barras para texto + número (ex.: filmes por gênero) e linha para ano + número (ex.: nota média por ano).
 - **Barra lateral**: cota restante do dia, modelo em uso, botão **Nova conversa** e 5 perguntas de exemplo, uma por categoria do enunciado. Elas já estão no cache, então respondem na hora e **não gastam cota**.
