@@ -87,14 +87,17 @@ def classificar_erro(erro: Exception) -> Literal["trocar", "cota", "outro"]:
 
     - 429 com provedor (upstream) ou 404: modelo lotado ou fora do ar -> "trocar" de modelo.
     - 429 sem provedor: cota diária esgotada -> "cota" (não tentar outros modelos).
+    - 5xx com provedor (ex.: 502 "Provider returned error"): falha do provedor -> "trocar".
     """
     if not isinstance(erro, ModelHTTPError):
         return "outro"
+    corpo = str(erro.body).lower()
     if erro.status_code == 404:
         return "trocar"
     if erro.status_code == 429:
-        corpo = str(erro.body).lower()
         return "trocar" if "upstream" in corpo or "provider_name" in corpo else "cota"
+    if erro.status_code >= 500 and "provider_name" in corpo:
+        return "trocar"
     return "outro"
 
 

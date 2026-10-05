@@ -45,6 +45,11 @@ CORPO_UPSTREAM = {
     "code": 429,
     "metadata": {"raw": "model is temporarily rate-limited upstream", "provider_name": "Chutes"},
 }
+CORPO_502_PROVEDOR = {  # erro real visto na avaliação (Etapa 8)
+    "message": "Provider returned error",
+    "code": 502,
+    "metadata": {"raw": "error code: 502\n", "provider_name": "Nvidia", "is_byok": False},
+}
 
 
 @pytest.fixture
@@ -167,10 +172,14 @@ def test_ferramentas_registradas() -> None:
         (429, "Model is temporarily rate-limited upstream", "trocar"),
         (404, {"message": "No endpoints found for modelo:free"}, "trocar"),
         (429, CORPO_COTA, "cota"),
+        (502, CORPO_502_PROVEDOR, "trocar"),
+        (503, {"message": "Provider returned error", "metadata": {"provider_name": "Chutes"}}, "trocar"),
         (400, {"message": "Bad request"}, "outro"),
         (500, None, "outro"),
+        (502, {"message": "Bad gateway"}, "outro"),
     ],
-    ids=["429_upstream", "429_upstream_texto", "404", "429_cota", "400", "500"],
+    ids=["429_upstream", "429_upstream_texto", "404", "429_cota", "502_provedor", "503_provedor", "400", "500",
+         "502_sem_provedor"],
 )
 def test_classificar_erro(status: int, corpo: object, esperado: str) -> None:
     assert classificar_erro(ModelHTTPError(status, "m", corpo)) == esperado
@@ -195,7 +204,9 @@ def test_cota_esgotada_nao_tenta_outros_modelos(sem_banco: None) -> None:
     assert reserva == []  # o modelo reserva nunca foi chamado
 
 
-@pytest.mark.parametrize(("status", "corpo"), [(429, CORPO_UPSTREAM), (404, {"message": "not found"})])
+@pytest.mark.parametrize(
+    ("status", "corpo"), [(429, CORPO_UPSTREAM), (404, {"message": "not found"}), (502, CORPO_502_PROVEDOR)]
+)
 def test_modelo_indisponivel_passa_para_o_proximo(sem_banco: None, status: int, corpo: object) -> None:
     falhas: list[str] = []
     modelo = FallbackModel(
