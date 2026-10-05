@@ -109,3 +109,62 @@ q19 e q20 são recusadas pelos guardrails antes do modelo, então não dependem 
 
 **Ressalva:** o 19/19 mistura versões do prompt (ver a tabela acima). Só q01, q02 e q10 foram
 avaliadas com o prompt novo. Uma rodada completa com o prompt novo fica para quando houver cota.
+
+## Ajuste 4 — prompt: não conferir depois de ter a resposta (para a q12)
+
+Instrução acrescentada à seção "Ferramentas e economia" do prompt de sistema:
+
+> Quando o resultado de uma consulta já responder a pergunta, escreva a resposta final sem fazer
+> consultas adicionais de conferência.
+
+## Rodada final — 05/10/2026 (`--refazer --ids q01-q20`, prompt final)
+
+Nova chave do OpenRouter, com 50 requisições. Os resultados esperados que dependem da data foram
+regerados de novo antes da rodada: **nenhum mudou**.
+
+A rodada precisou de três execuções (a retomada continua de onde parou):
+
+1. **q01–q07**, todas certas. Parou na q08 por *timeout* do modelo (erro de conexão, que não aciona o
+   fallback).
+2. **q08** certa. Na q09 o modelo gerou um SQL com aspas sem fechar (`'Joe Anoa'i'`); o sqlglot
+   levantou `TokenError`, que o `validate_sql` não tratava (só `ParseError`), e o processo caiu.
+   **Correção no agente:** `db.validate_sql` agora captura `SqlglotError` (a classe-base dos dois) e
+   devolve o erro ao modelo, que pode corrigir o SQL. Coberto por teste em `tests/test_db.py`.
+3. **q09–q17** avaliadas; a rodada parou antes da q18 porque restavam 2 requisições (mínimo: 3).
+   q19 e q20 foram refeitas sem custo (recusadas pelos guardrails, antes do modelo).
+
+### Resultado
+
+- **Acerto: 18/19 (94,7%)**, sem a q17 (informativa, que também acertou). A única errada é a q12.
+- **Média de requisições por pergunta: 2,5** contando as 20 (q19 e q20 = 0), **2,8** entre as 18 que
+  chamaram o modelo. Todas respondidas por `nvidia/nemotron-3.5-lightning:free`.
+- Perguntas com consultas extras (acima de 2 requisições): q03 (6), q08 (6), q12 (6, estourou o
+  limite) e q16 (5). As demais usaram 2, e a q18 usou 1.
+- A q12 estoura o limite e não tem modelo registrado; as 6 requisições foram incluídas na média (o
+  script agora conta `MAX_REQUISICOES` quando a pergunta estoura o limite).
+
+### A q12 ainda fez consultas extras
+
+**Sim, mesmo com a instrução do Ajuste 4.** A 1ª consulta já trazia a resposta (margem agregada,
+`ORDER BY ... LIMIT 1`, com os filtros e o piso de US$ 100 mil). Depois o agente repetiu a
+consulta sem `LIMIT`, recalculou as somas só do gênero Action duas vezes, fez a divisão à mão
+(`SELECT 43345407482.0 / 64837682121.0 * 100`) e chamou `describe_table`, até estourar o limite de 6
+chamadas. É o mesmo padrão observado na rodada 2; a instrução de economia não o corrigiu. A
+pergunta parece levar o modelo a "conferir" a margem agregada, que difere da média simples.
+
+### Versão do prompt por pergunta na rodada final
+
+| Versão do prompt | Perguntas |
+|---|---|
+| Final (métrica e contagem + economia) | q01–q17 |
+| Antigo (rodada 1) | q18: não refeita por falta de cota; é uma recusa (fora do escopo), que usou 1 requisição |
+| Não depende do prompt | q19 e q20 (recusadas pelos guardrails antes do modelo) |
+
+## Histórico do acerto
+
+| Rodada | Acerto | Observação |
+|---|---|---|
+| Rodada 1 (prompt original) | 16/19 (84,2%) | q01, q02 e q04 erradas por coluna faltando. |
+| + Ajuste 1 (comparador) | 17/19 | q04 passa. |
+| Rodada 2 parcial (prompt com métrica e contagem) | 19/19 | Misturava versões do prompt; q12 não concluída (502). |
+| **Rodada final (prompt final)** | **18/19 (94,7%)** | Todas no prompt final, exceto q18; q12 estoura o limite de requisições. |

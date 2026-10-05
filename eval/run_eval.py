@@ -33,7 +33,11 @@ import httpx
 import sqlglot
 from build_expected import PASTA_EXPECTED, carregar_golden
 from check_quota import consultar_cota
-from pydantic_ai.exceptions import FallbackExceptionGroup, ModelAPIError
+from pydantic_ai.exceptions import (
+    FallbackExceptionGroup,
+    ModelAPIError,
+    UsageLimitExceeded,
+)
 from pydantic_ai.models import Model
 from sqlglot import exp
 from sqlglot.errors import ParseError
@@ -376,10 +380,12 @@ def avaliar_pergunta(item: dict[str, Any], modelo: Model, usar_cache: bool = Tru
     except ErroAgente as erro:
         if isinstance(erro.__cause__, FallbackExceptionGroup):
             raise ModelosIndisponiveis(str(erro)) from erro
+        # Estourar o limite significa ter gasto todas as requisições; nos outros erros o gasto é desconhecido.
+        gastas = MAX_REQUISICOES if isinstance(erro.__cause__, UsageLimitExceeded) else None
         return registro | {
             "acertou": False, "detalhe": f"erro do agente: {erro}", "erro": str(erro),
             "resposta": None, "sql_gerado": None, "sql_executados": [], "colunas": [], "linhas": [],
-            "modelo": None, "requisicoes": None, "tempo_ms": round((time.perf_counter() - inicio) * 1000),
+            "modelo": None, "requisicoes": gastas, "tempo_ms": round((time.perf_counter() - inicio) * 1000),
             "cache": False, "recusada": False,
         }
 

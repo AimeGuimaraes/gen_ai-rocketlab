@@ -9,7 +9,9 @@ from pydantic_ai.exceptions import ModelHTTPError
 from pydantic_ai.messages import ModelResponse, TextPart, ToolCallPart
 from pydantic_ai.models.function import FunctionModel
 
+from cinedata_agent import agent as modulo_agente
 from cinedata_agent.agent import QuotaExceededError, RespostaAgente
+from cinedata_agent.agent import ask as ask_real
 from cinedata_agent.config import RAIZ_PROJETO
 
 sys.path.insert(0, str(RAIZ_PROJETO / "eval"))
@@ -285,6 +287,20 @@ def test_erro_http_do_modelo_para_sem_salvar(ambiente: dict[str, Any], monkeypat
     registros, parada = run_eval.rodar(GOLDEN_FALSO, MODELO_FALSO)
     assert [r["id"] for r in registros] == ["q01"]
     assert "erro do modelo em q02" in (parada or "")
+
+
+def test_estouro_do_limite_conta_todas_as_requisicoes(
+    ambiente: dict[str, Any], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # Agente real com modelo que nunca para de chamar ferramentas (como a q12 na rodada final).
+    monkeypatch.setattr(run_eval, "ask", ask_real)
+    monkeypatch.setattr(modulo_agente, "inicializar_banco", lambda: None)
+    roda_sem_parar = FunctionModel(
+        lambda m, i: ModelResponse(parts=[ToolCallPart("list_tables", {})]), model_name="modelo-teste"
+    )
+    registro = run_eval.avaliar_pergunta(GOLDEN_FALSO[0], roda_sem_parar)
+    assert not registro["acertou"] and "limite" in registro["detalhe"]
+    assert registro["requisicoes"] == run_eval.MAX_REQUISICOES
 
 
 def test_refazer_reavalia_as_ja_salvas(ambiente: dict[str, Any], monkeypatch: pytest.MonkeyPatch) -> None:
