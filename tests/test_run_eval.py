@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from pydantic_ai.exceptions import ModelHTTPError
 from pydantic_ai.messages import ModelResponse, TextPart, ToolCallPart
 from pydantic_ai.models.function import FunctionModel
 
@@ -103,6 +104,43 @@ def test_chave_numerica_ano() -> None:
     esperado = {"colunas": ["ano_lancamento", "nota_media_imdb"], "linhas": [[2019, 6.5], [2020, 6.25]]}
     cols, linhas = resultado(["ano", "media"], [[2020.0, 6.251], [2019.0, 6.5]])
     assert run_eval.comparar(item, esperado, cols, linhas, SQL)[0]
+
+
+SQL_Q04 = """SELECT m.titulo, f.popularidade, f.qtd_tmdb
+FROM fact_movies_performance f JOIN dim_movies m ON m.sk_movie_id = f.sk_movie_id
+WHERE f.qtd_tmdb >= 100 AND f.popularidade IS NOT NULL
+ORDER BY f.popularidade DESC LIMIT 5"""
+
+
+@pytest.mark.parametrize(
+    ("sql", "esperado"),
+    [
+        (SQL_Q04, {"qtd_tmdb"}),  # só no WHERE; popularidade também ordena
+        ("SELECT titulo, receita_usd FROM t WHERE receita_usd IS NOT NULL ORDER BY receita_usd DESC", set()),
+        (  # entra em coluna calculada
+            (
+                "SELECT titulo, receita_usd, (receita_usd - orcamento_usd) / receita_usd AS margem FROM t "
+                "WHERE receita_usd >= 100000 ORDER BY margem DESC"
+            ),
+            set(),
+        ),
+        ("SELECT g, ROUND(AVG(x), 2) AS media FROM t WHERE x IS NOT NULL GROUP BY g", set()),
+        ("", set()),
+    ],
+    ids=["q04", "ordena", "calculada", "agregada", "vazio"],
+)
+def test_colunas_so_filtro(sql: str, esperado: set[str]) -> None:
+    assert run_eval.colunas_so_filtro(sql) == esperado
+
+
+def test_coluna_so_de_filtro_ausente_nao_reprova() -> None:
+    item = ITEM_EXATO | {"sql_esperado": SQL_Q04}
+    esperado = {"colunas": ["titulo", "popularidade", "qtd_tmdb"], "linhas": [["A", 9.5, 1000], ["B", 8.0, 200]]}
+    cols, linhas = resultado(["titulo_ano", "popularidade"], [["A (2023)", 9.5], ["B (2022)", 8.0]])
+    acertou, detalhe = run_eval.comparar(item, esperado, cols, linhas, SQL)
+    assert acertou and "opcionais ausentes: qtd_tmdb" in detalhe
+    cols, linhas = resultado(["titulo_ano", "qtd"], [["A (2023)", 1000], ["B (2022)", 200]])
+    assert not run_eval.comparar(item, esperado, cols, linhas, SQL)[0]  # a métrica (popularidade) segue obrigatória
 
 
 # --- top_n_contem ---
@@ -235,6 +273,18 @@ def test_cota_esgotada_salva_o_que_rodou_e_retoma(
     monkeypatch.setattr(run_eval, "inicializar_banco", lambda: None)
     assert run_eval.main([]) == 0
     assert ambiente["chamadas"] == ["Outra pergunta?", "Previsão do tempo?"]
+
+
+def test_erro_http_do_modelo_para_sem_salvar(ambiente: dict[str, Any], monkeypatch: pytest.MonkeyPatch) -> None:
+    def ask_502(pergunta: str, modelo: Any = None, usar_cache: bool = True) -> RespostaAgente:
+        if pergunta == "Outra pergunta?":
+            raise ModelHTTPError(502, "modelo", {"message": "Provider returned error"})
+        return resposta_falsa()
+
+    monkeypatch.setattr(run_eval, "ask", ask_502)
+    registros, parada = run_eval.rodar(GOLDEN_FALSO, MODELO_FALSO)
+    assert [r["id"] for r in registros] == ["q01"]
+    assert "erro do modelo em q02" in (parada or "")
 
 
 def test_refazer_reavalia_as_ja_salvas(ambiente: dict[str, Any], monkeypatch: pytest.MonkeyPatch) -> None:

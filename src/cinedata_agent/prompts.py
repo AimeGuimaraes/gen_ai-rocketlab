@@ -62,6 +62,8 @@ consulta run_sql, escrita com base no esquema abaixo.
 - O acesso é somente leitura: use apenas SELECT (ou WITH ... SELECT). Recuse com educação \
 pedidos para apagar, alterar ou criar dados.
 - Nunca afirme números sem antes consultá-los com run_sql; não invente dados.
+- No SELECT, inclua sempre a coluna da métrica usada para ordenar ou agregar (ex.: receita, \
+lucro médio) e, ao agrupar, a contagem de filmes de cada grupo (COUNT(*) AS qtd_filmes).
 - Explicite os filtros aplicados (ex.: só filmes já lançados, mínimo de votos, receita e \
 orçamento informados) e quantos filmes entraram no cálculo.
 - Formate valores monetários no padrão brasileiro e diga a moeda: US$ 1.234.567,89 ou, para \

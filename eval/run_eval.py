@@ -30,10 +30,13 @@ sys.path.insert(0, str(RAIZ / "src"))
 sys.path.insert(0, str(RAIZ / "scripts"))
 
 import httpx
+import sqlglot
 from build_expected import PASTA_EXPECTED, carregar_golden
 from check_quota import consultar_cota
-from pydantic_ai.exceptions import FallbackExceptionGroup
+from pydantic_ai.exceptions import FallbackExceptionGroup, ModelAPIError
 from pydantic_ai.models import Model
+from sqlglot import exp
+from sqlglot.errors import ParseError
 
 from cinedata_agent import cache
 from cinedata_agent.agent import (
@@ -272,16 +275,50 @@ def comparar(
         return False, f"linhas diferentes ({len(chaves_obt)} obtidas, {len(chaves_esp)} esperadas): " + "; ".join(partes)
 
     usadas = set(mapa.values())
-    conferidas = []
+    opcionais = COLUNAS_OPCIONAIS | colunas_so_filtro(item.get("sql_esperado", ""))
+    conferidas, ausentes = [], []
     for nome, valores in esperadas.items():
         if nome in nomes_chave or not _numerica(valores):
             continue
         coluna = _coluna_numerica_igual(nome, _por_chave(chaves_esp, valores), obtidas, chaves_obt, usadas)
         if coluna is not None:
             conferidas.append(nome if coluna == nome else f"{nome}→{coluna}")
-        elif nome not in COLUNAS_OPCIONAIS:
+        elif nome in opcionais:
+            ausentes.append(nome)
+        else:
             return False, f"nenhuma coluna do resultado bate com '{nome}' (tolerância de {TOLERANCIA})"
-    return True, f"mesmas linhas (chave: {descricao_chave}); valores conferidos: {', '.join(conferidas) or '-'}"
+    detalhe = f"mesmas linhas (chave: {descricao_chave}); valores conferidos: {', '.join(conferidas) or '-'}"
+    return True, detalhe + (f"; opcionais ausentes: {', '.join(ausentes)}" if ausentes else "")
+
+
+def colunas_so_filtro(sql: str) -> set[str]:
+    """Colunas do SELECT esperado usadas só como filtro (o agente não precisa mostrá-las).
+
+    Critério: coluna direta da base que aparece no WHERE/HAVING, mas não no ORDER BY nem em outra
+    coluna calculada do SELECT. Ex.: na q04, qtd_tmdb só entra no WHERE (qtd_tmdb >= 100), e a
+    pergunta é sobre popularidade. Colunas calculadas (AVG, ROUND...) e de ordenação seguem obrigatórias.
+    """
+    if not sql.strip():
+        return set()
+    try:
+        arvore = sqlglot.parse_one(sql, read="sqlite")
+    except ParseError:
+        return set()
+    if not isinstance(arvore, exp.Select):
+        return set()
+
+    def nomes(no: exp.Expression | None) -> set[str]:
+        return {c.name for c in no.find_all(exp.Column)} if no is not None else set()
+
+    filtros = nomes(arvore.args.get("where")) | nomes(arvore.args.get("having"))
+    ordenacao = nomes(arvore.args.get("order"))
+    calculadas = set().union(*(nomes(p) for p in arvore.expressions if not isinstance(p.unalias(), exp.Column)))
+    resultado = set()
+    for projecao in arvore.expressions:
+        coluna = projecao.unalias()
+        if isinstance(coluna, exp.Column) and coluna.name in filtros and coluna.name not in ordenacao | calculadas:
+            resultado.add(projecao.alias_or_name)
+    return resultado
 
 
 # --- Estimativa e cota ---
@@ -420,6 +457,9 @@ def rodar(
             return registros, f"cota esgotada em {item['id']} ({erro})"
         except ModelosIndisponiveis as erro:
             return registros, f"modelos indisponíveis em {item['id']} ({erro})"
+        except ModelAPIError as erro:  # ex.: 502 do provedor; a pergunta não é salva e pode ser refeita
+            logger.error("Erro do modelo em %s: %s", item["id"], erro)
+            return registros, f"erro do modelo em {item['id']} ({erro})"
         salvar_registro(registro, pasta)
         registros.append(registro)
         logger.info("%s: %s (%s)", item["id"], "acertou" if registro["acertou"] else "errou", registro["detalhe"])
