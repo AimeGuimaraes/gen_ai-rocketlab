@@ -37,6 +37,7 @@ cp .env.example .env
 ```
 
 > Se o PowerShell bloquear o `Activate.ps1`, rode antes `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`.
+> No Windows, clone o projeto numa pasta de caminho curto (ex.: `C:\projetos`). O Windows limita caminhos a 260 caracteres, e alguns pacotes têm arquivos com nomes longos, o que pode fazer a instalação falhar em pastas muito fundas.
 
 ### 2. Banco e chave
 
@@ -244,15 +245,12 @@ gen_ai-rocketlab/
 
 ---
 
-## Limitações e próximos passos
+## Limitações
 
 Principais limitações (lista completa em [docs/schema_docs.yaml](docs/schema_docs.yaml), seção `limitacoes_conhecidas`):
 
-1. **Modelos gratuitos**: podem sair do ar, ficar lentos ou deixar de ser gratuitos (o `z-ai/glm-5.2:free` do guia deixou de ser gratuito em 04/10/2026). O fallback ajuda, mas não resolve tudo.
-2. **Consultas extras**: em algumas perguntas (como a q12) o modelo continua conferindo depois de já ter a resposta e pode passar do limite de 6 chamadas.
-3. **Títulos repetidos**: em perguntas de acompanhamento o agente às vezes filtra só pelo título, o que pode misturar filmes homônimos (4.558 títulos se repetem na base).
-4. **Avaliações de usuários** parecem dados de exemplo (todas criadas no mesmo instante, concentradas em poucos filmes), e as notas IMDb parecem ligadas pelo título.
-5. **Dados incompletos**: `idioma_original` está 100% vazio, só 1.630 filmes têm receita e orçamento, e os votos TMDB vão só até cerca de 2023.
-6. **Textos em inglês**: sinopses e nomes de gêneros estão em inglês; o agente traduz os gêneros, mas não as sinopses.
+1. **Consultas extras**: em algumas perguntas (como a q12) o modelo continua conferindo depois de já ter a resposta e pode passar do limite de 6 chamadas.
+2. **Títulos repetidos**: em perguntas de acompanhamento o agente às vezes filtra só pelo título, o que pode misturar filmes homônimos (4.558 títulos se repetem na base).
+3. **Textos em inglês**: sinopses e nomes de gêneros estão em inglês, o agente traduz os gêneros, mas não as sinopses.
 
-Próximos passos: busca semântica nas sinopses e conexão direta com o Databricks.
+
